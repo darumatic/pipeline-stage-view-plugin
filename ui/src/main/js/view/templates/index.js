@@ -81,7 +81,7 @@ registerHBSHelper('formatTime', function(millis, numUnitsDisplayed) {
     return formatters.time(millis, numUnitsDisplayed);
 });
 
-registerHBSHelper('formatDate', function (date, toFormat) {
+registerHBSHelper('formatDate', function(date, toFormat) {
     if (!dateFormattingOn) {
         // Just return as is...
         return date;
@@ -93,6 +93,19 @@ registerHBSHelper('formatDate', function (date, toFormat) {
     } else {
         return moment(date).format(toFormat);
     }
+});
+
+registerHBSHelper('ellipsis', function(string, start, end) {
+    var theString = string.substring(start, end);
+    if (string.length > end) {
+        theString += '...';
+    }
+    return theString;
+});
+
+registerHBSHelper('substring', function(string, start, end) {
+    var theString = string.substring(start, end);
+    return theString;
 });
 
 /**
@@ -108,7 +121,7 @@ registerHBSHelper('emphasiseToOpacity', function(emphasiseVal) {
     return (emphasiseVal - 0.5);
 });
 
-registerHBSHelper('ifCond', function (v1, operator, v2, options) {
+registerHBSHelper('ifCond', function(v1, operator, v2, options) {
     switch (operator) {
         case '==':
             return (v1 === v2) ? options.fn(this) : options.inverse(this);
@@ -140,7 +153,7 @@ function getTemplate(templateName) {
     if (!templateInstance) {
         throw 'No template by the name "' + templateName + '".  Check ui/src/main/js/view/templates/index.js and make sure the template is registered in the templateCache.';
     }
-    return  templateInstance;
+    return templateInstance;
 }
 
 /**
@@ -148,8 +161,8 @@ function getTemplate(templateName) {
  * @param templateName The template name.
  * @returns The template instance.
  */
-exports.get = function (templateName) {
-    return  getTemplate(templateName);
+exports.get = function(templateName) {
+    return getTemplate(templateName);
 }
 
 /**
@@ -161,7 +174,7 @@ exports.get = function (templateName) {
  * at the root level.
  * @returns jQuery DOM.
  */
-exports.apply = function (templateName, dataModel, divWrap) {
+exports.apply = function(templateName, dataModel, divWrap) {
     var templateInstance = getTemplate(templateName);
     var html = templateInstance(dataModel);
     var jQueryDom;
@@ -185,6 +198,6 @@ exports.apply = function (templateName, dataModel, divWrap) {
  * @param on Formatting on off flag.  True to turn formatting on (default),
  * otherwise false.
  */
-exports.dateFormatting = function (on) {
+exports.dateFormatting = function(on) {
     dateFormattingOn = on;
 }

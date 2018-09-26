@@ -27,22 +27,26 @@ import com.cloudbees.workflow.rest.endpoints.JobAPI;
 import com.cloudbees.workflow.rest.hal.Link;
 import com.cloudbees.workflow.rest.hal.Links;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import hudson.scm.ChangeLogSet;
+import hudson.util.LogTaskListener;
 import hudson.util.RunList;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:tom.fennelly@gmail.com">tom.fennelly@gmail.com</a>
  */
 public class JobExt {
-
     /**
      * Max number of runs per page. Pagination not yet supported.
      */
-    public static final int MAX_RUNS_PER_JOB = Integer.getInteger(JobExt.class.getName()+".maxRunsPerJob", 10);
+    public static final int MAX_RUNS_PER_JOB = Integer.getInteger(JobExt.class.getName() + ".maxRunsPerJob", 10);
 
     private JobLinks _links;
     private String name;
@@ -127,8 +131,24 @@ public class JobExt {
         }
 
         List<RunExt> runsExt = new ArrayList<RunExt>();
-        for (WorkflowRun run : runs) {
+        for (int i = 0; i < runs.size(); i++) {
+            WorkflowRun run = runs.get(i);
             RunExt runExt = (fullStages) ? RunExt.create(run) : RunExt.create(run).createWrapper();
+
+            if (run.getChangeSets().isEmpty()) {
+                runExt.setChangeSet(lastChangeSet(runs, i));
+                runExt.setChangeSets(null);
+            } else {
+                List<ChangeLogSet<? extends ChangeLogSet.Entry>> changeSets = run.getChangeSets();
+                runExt.setChangeSet(ChangeSetExt.create(changeSets.get(0), run));
+                runExt.setChangeSets(changeSets.stream().map(changeSet -> ChangeSetExt.create(changeSet, run)).collect(Collectors.toList()));
+            }
+
+            try {
+                runExt.setEnvironment(run.getEnvironment(new LogTaskListener(null, Level.INFO)).get("ENVIRONMENT"));
+            } catch (IOException | InterruptedException e) {
+            }
+
             runsExt.add(runExt);
             if (since != null && runExt.getName().equals(since)) {
                 break;
@@ -140,4 +160,17 @@ public class JobExt {
         }
         return runsExt;
     }
+
+    private static ChangeSetExt lastChangeSet(List<WorkflowRun> runs, int currentIndex) {
+        for (int i = currentIndex + 1; i < runs.size(); i++) {
+            WorkflowRun run = runs.get(i);
+            List<ChangeLogSet<? extends ChangeLogSet.Entry>> changeSets = run.getChangeSets();
+            if (!changeSets.isEmpty()) {
+                ChangeLogSet<? extends ChangeLogSet.Entry> entries = changeSets.get(0);
+                return ChangeSetExt.create(entries, run);
+            }
+        }
+        return null;
+    }
+
 }

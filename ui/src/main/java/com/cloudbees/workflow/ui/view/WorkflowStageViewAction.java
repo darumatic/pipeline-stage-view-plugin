@@ -28,7 +28,7 @@ public class WorkflowStageViewAction implements Action {
 
     @Override
     public String getDisplayName() {
-        return Messages.full_stage_view();
+        return "STAGE VIEW";
     }
 
     @Override

@@ -1,4 +1,11 @@
-.sr-only {text-indent:-99999em; oveflow:hidden; font-size:0; position:fixed; top:-999em; display:block;}
+.sr-only {
+  text-indent: -99999em;
+  oveflow: hidden;
+  font-size: 0;
+  position: fixed;
+  top: -999em;
+  display: block;
+}
 
 .run-timing {
   position: absolute;
@@ -37,10 +44,10 @@
   }
 
   .table-box {
-    padding: 0 0 0 17em;
+    padding: 0 0 0 20em;
     .cell-color {
       padding: 1px;
-      position:relative;
+      position: relative;
     }
     col:nth-child(even) {
       background: rgba(0, 0, 0, .03)
@@ -55,14 +62,14 @@
       background: rgba(230, 230, 9, .2)
     }
     tr.UNSTABLE .cell-color {
-          background: rgba(230, 230, 9, .2)
+      background: rgba(230, 230, 9, .2)
     }
     tr.FAILED .cell-color {
       background: rgba(255, 50, 0, .1)
     }
     tr.FAILED .FAILED .duration {
       background: repeating-linear-gradient(-45deg, rgba(255, 50, 0, .1), rgba(255, 50, 0, .1) 20px, rgba(255, 000, 0, .15) 20px, rgba(255, 000, 0, .15) 40px);
-      box-shadow:0 0 0 1px;
+      box-shadow: 0 0 0 1px;
       span {
         opacity: 1 !important;
       }
@@ -99,12 +106,15 @@
         .duration {
           position: absolute;
           white-space: nowrap;
-          top:0;left:0;right:0;bottom:0;
-          height:auto;
-          padding:.33em .33em 1.33em;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          height: auto;
+          padding: .33em .33em 1.33em;
 
-          span{
-              display:inline-block;
+          span {
+            display: inline-block;
           }
         }
       }
@@ -140,19 +150,20 @@
           box-shadow: rgba(0, 0, 0, 0.25) 0 -10px 10px -10px inset;
           background: rgba(0, 0, 0, .05);
           padding: 1.33em .5em 0;
-          min-height:3.5em;
-          .duration{}
+          min-height: 3.5em;
+          .duration {
+          }
         }
         .stage-start {
           border: none;
           .cell-color {
             text-align: right;
             padding: .33em 1em;
-            margin:2px 0 0;
+            margin: 2px 0 0;
             background: none;
             color: rgba(0, 0, 0, .25);
             font-weight: bold;
-            overflow:hidden;
+            //overflow: hidden;
 
           }
         }
@@ -170,10 +181,18 @@
         left: 0px;
         text-align: center;
         border-top: 1px solid rgba(0, 0, 0, .1);
-        width: 17em;
+        width: 20em;
         border-left: 1px solid rgba(0, 0, 0, .1);
-        overflow:hidden;
-        margin:-1px 0 0;
+        //overflow: hidden;
+        margin: -1px 0 0;
+        .changeset-environment {
+          position: absolute;
+          top: 0;
+          right: 0;
+          padding: 3px 5px;
+          background: #89AED1;
+          border-radius: 2px;
+        }
         .cell-color {
           padding: 0;
         }
@@ -183,8 +202,8 @@
           position: relative;
           font-size: 11px;
           padding: .5em 0;
-          width:100%;
-          overflow:hidden;
+          width: 100%;
+          //overflow: hidden;
 
           .stage-end-icons {
             width: 8em;
@@ -202,25 +221,61 @@
             }
           }
           .stage-start-box {
-            margin: 1.3em 1em 1.3em 2em;
             clear: both;
             text-align: left;
             display: block;
-            width: 14em;
             position: relative;
+            margin-left: 55px;
+          }
+          .stage-environment {
+            text-shadow: none;
+            position: absolute;
+            top: 0.2em;
+            right: 0;
+            padding: 0px 3px;
+            background: #89AED1;
+            border-radius: 2px;
+            font-size: 0.9em;
+            line-height: 1.5em;
+            display: inline-block;
+            margin-right: 5px;
+            color: #FFF;
           }
           .stage-start-time {
-            border: 1px solid #acb;
             border-radius: 0;
-            box-shadow: rgba(0, 0, 0, .2) 0 1px 3px;
             float: none;
-            display: inline-block;
-            width: 5em;
-            background: #fff;
             position: relative;
             z-index: 2;
+            text-align: left;
+            border: none;
+            color: #999;
           }
-
+          .changeset-total {
+            position: relative;
+            display: inline-block;
+          }
+          .changeset-total:hover .changeset-details { /* display tooltip on hover */
+            opacity: 1;
+          }
+          .changeset-details {
+            top: 1.5em;
+            background-color: #FFF;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            position: absolute;
+            -webkit-transition: opacity 0.5s;
+            -moz-transition: opacity 0.5s;
+            -ms-transition: opacity 0.5s;
+            -o-transition: opacity 0.5s;
+            transition: opacity 0.5s;
+            width: 208px;
+            z-index: 5000;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+            text-shadow: #fff 0 0 2px, #fff 0 1px 1px;
+            border-radius: 4px;
+            padding: 10px 10px 10px 20px;
+            list-style: square;
+          }
           .jobName {
             position: absolute;
             top: .68em;
@@ -354,9 +409,9 @@
       .duration {
         text-align: center;
         line-height: 4.8em;
-        padding-bottom:1em;
-        box-shadow:0 0 0 1px rgba(0,0,0,.1);
-        border-radius:4px;
+        padding-bottom: 1em;
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, .1);
+        border-radius: 4px;
       }
 
       .status {
@@ -401,7 +456,7 @@
     color: inherit;
   }
   .UNSTABLE .jobName .badge {
-      background-color: #E2E203;
+    background-color: #E2E203;
   }
   .FAILED .jobName .badge {
     background-color: @error-highlight;
@@ -461,4 +516,10 @@
   .cbwf-info-action-popover:before {
     .bottom-left-caret;
   }
+}
+
+[tooltip]:before {
+  position: absolute;
+  content: attr(tooltip);
+  opacity: 0;
 }

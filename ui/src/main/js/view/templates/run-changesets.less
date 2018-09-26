@@ -45,16 +45,9 @@
 }
 
 .changeset-box {
-  position: absolute;
   top: 0;
-  left: 5em;
   bottom: 0;
-  text-align: center;
-  width: 5em;
-  box-shadow: inset 0 1px 1px 1px rgba(0, 0, 0, .1);
-  border-top-right-radius: 5px;
-  border-bottom-right-radius: 5px;
-  background: rgba(0, 0, 0, .1);
+  text-align: left;
 
   .run-changeset {
     padding: 5px;
@@ -64,15 +57,23 @@
     border-top-right-radius: 5px;
     border-bottom-right-radius: 5px;
     position: absolute;
-    top:0;
-    left:0;
-    right:0;
-    bottom:0;
-    cursor:pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    cursor: pointer;
     .changes, .num {
       padding: 1px;
 
     }
+  }
+
+  .changeset-timestamp {
+    color: #999;
+  }
+
+  .changeset-author {
+    font-weight: bold;
   }
 }
 

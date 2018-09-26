@@ -30,10 +30,7 @@ import com.cloudbees.workflow.rest.hal.Links;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import hudson.model.Result;
 import hudson.model.Run;
-import org.jenkinsci.plugins.workflow.actions.TimingAction;
 import org.jenkinsci.plugins.workflow.flow.FlowExecution;
-import org.jenkinsci.plugins.workflow.graph.FlowGraphWalker;
-import org.jenkinsci.plugins.workflow.graph.FlowNode;
 import org.jenkinsci.plugins.workflow.graphanalysis.ForkScanner;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
@@ -43,16 +40,16 @@ import org.jenkinsci.plugins.workflow.support.steps.input.InputStepExecution;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 
 /**
  * External API response object for pipeline run
+ *
  * @author <a href="mailto:tom.fennelly@gmail.com">tom.fennelly@gmail.com</a>
  */
 public class RunExt {
 
-    private static int MAX_ARTIFACTS_COUNT = Integer.getInteger(RunExt.class.getName()+".maxArtifactsCount", 100);
+    private static int MAX_ARTIFACTS_COUNT = Integer.getInteger(RunExt.class.getName() + ".maxArtifactsCount", 100);
 
     private RunLinks _links;
     private String id;
@@ -64,6 +61,10 @@ public class RunExt {
     private long queueDurationMillis;
     private long pauseDurationMillis;
     private List<StageNodeExt> stages;
+    private ChangeSetExt changeSet;
+    private List<ChangeSetExt> changeSets;
+    private String environment;
+
     public RunLinks get_links() {
         return _links;
     }
@@ -144,6 +145,30 @@ public class RunExt {
         this.stages = stages;
     }
 
+    public ChangeSetExt getChangeSet() {
+        return changeSet;
+    }
+
+    public void setChangeSet(ChangeSetExt changeSet) {
+        this.changeSet = changeSet;
+    }
+
+    public List<ChangeSetExt> getChangeSets() {
+        return changeSets;
+    }
+
+    public void setChangeSets(List<ChangeSetExt> changeSets) {
+        this.changeSets = changeSets;
+    }
+
+    public String getEnvironment() {
+        return environment;
+    }
+
+    public void setEnvironment(String environment) {
+        this.environment = environment;
+    }
+
     public static final class RunLinks extends Links {
         private Link changesets;
         private Link pendingInputActions;
@@ -187,10 +212,11 @@ public class RunExt {
         }
     }
 
-    /** Computes timings after the stages have been set up
-     *  That means timing of the stage has been computed, and the stages are sorted
-     *
-     *  Deprecated but retained for external APIs consuming it, use {@link #createNew(WorkflowRun)} instead
+    /**
+     * Computes timings after the stages have been set up
+     * That means timing of the stage has been computed, and the stages are sorted
+     * <p>
+     * Deprecated but retained for external APIs consuming it, use {@link #createNew(WorkflowRun)} instead
      */
     @Deprecated
     public static RunExt computeTimings(RunExt runExt) {
@@ -203,7 +229,7 @@ public class RunExt {
         if (!runExt.getStages().isEmpty()) {
             // We're done when the last stage is, and it is the result of the overall run
             FlowNodeExt lastStage = runExt.getLastStage();
-            runExt.setEndTimeMillis(lastStage.getStartTimeMillis()+lastStage.getDurationMillis());
+            runExt.setEndTimeMillis(lastStage.getStartTimeMillis() + lastStage.getDurationMillis());
             lastStage.setStatus(runExt.getStatus());
         }
 
@@ -228,7 +254,9 @@ public class RunExt {
         return runExt;
     }
 
-    /** Get basics set up: everything but status/timing/node walking for a run, no cache use */
+    /**
+     * Get basics set up: everything but status/timing/node walking for a run, no cache use
+     */
     public static RunExt createMinimal(WorkflowRun run) {
         FlowExecution execution = run.getExecution();
 
@@ -258,8 +286,9 @@ public class RunExt {
         return runExt;
     }
 
-    /** Creates a wrapper of this that hides the full stage nodes
-     *  Use case: returning a minimal view of the run, while using a cached, fully-realized version
+    /**
+     * Creates a wrapper of this that hides the full stage nodes
+     * Use case: returning a minimal view of the run, while using a cached, fully-realized version
      */
     public RunExt createWrapper() {
         return new ChildHidingWrapper(this);
@@ -269,22 +298,51 @@ public class RunExt {
         protected RunExt myRun;
         protected List<StageNodeExt> wrappedStages;
 
-        public RunLinks get_links() {return myRun.get_links();}
-        public String getId() {return myRun.getId();}
-        public String getName() {return myRun.getName();}
-        public StatusExt getStatus() {return myRun.getStatus();}
-        public long getStartTimeMillis() {return myRun.getStartTimeMillis();}
-        public long getEndTimeMillis() {return myRun.getEndTimeMillis();}
-        public long getDurationMillis() {return myRun.getDurationMillis();}
-        public long getQueueDurationMillis() {return myRun.getQueueDurationMillis();}
-        public long getPauseDurationMillis() {return myRun.getPauseDurationMillis();}
-        public List<StageNodeExt> getStages() {return Collections.unmodifiableList(wrappedStages);}
+        public RunLinks get_links() {
+            return myRun.get_links();
+        }
+
+        public String getId() {
+            return myRun.getId();
+        }
+
+        public String getName() {
+            return myRun.getName();
+        }
+
+        public StatusExt getStatus() {
+            return myRun.getStatus();
+        }
+
+        public long getStartTimeMillis() {
+            return myRun.getStartTimeMillis();
+        }
+
+        public long getEndTimeMillis() {
+            return myRun.getEndTimeMillis();
+        }
+
+        public long getDurationMillis() {
+            return myRun.getDurationMillis();
+        }
+
+        public long getQueueDurationMillis() {
+            return myRun.getQueueDurationMillis();
+        }
+
+        public long getPauseDurationMillis() {
+            return myRun.getPauseDurationMillis();
+        }
+
+        public List<StageNodeExt> getStages() {
+            return Collections.unmodifiableList(wrappedStages);
+        }
 
         protected ChildHidingWrapper(RunExt run) {
             this.myRun = run;
             List<StageNodeExt> myWrappedStages = new ArrayList<StageNodeExt>();
             if (wrappedStages == null) {
-                for(StageNodeExt stage : run.getStages()) {
+                for (StageNodeExt stage : run.getStages()) {
                     myWrappedStages.add(stage.myWrapper());
                 }
                 this.wrappedStages = myWrappedStages;
@@ -326,14 +384,14 @@ public class RunExt {
         if (runExt.getStatus() == StatusExt.IN_PROGRESS || runExt.getStatus() == StatusExt.PAUSED_PENDING_INPUT) {
             runExt.setEndTimeMillis(currentTimeMillis);
         } else {
-            runExt.setEndTimeMillis(run.getStartTimeInMillis()+run.getDuration());
+            runExt.setEndTimeMillis(run.getStartTimeInMillis() + run.getDuration());
         }
 
         // Run has a timestamp when enqueued, and start time when it gets and Executor and begins running
         if (run.hasntStartedYet()) {
             runExt.setQueueDurationMillis(currentTimeMillis - run.getTimeInMillis());  // Enqueued time, not runtime
         } else {
-            runExt.setQueueDurationMillis(Math.max(0, run.getStartTimeInMillis()-run.getTimeInMillis()));
+            runExt.setQueueDurationMillis(Math.max(0, run.getStartTimeInMillis() - run.getTimeInMillis()));
         }
 
         runExt.setDurationMillis(Math.max(0, runExt.getEndTimeMillis() - runExt.getStartTimeMillis()));
@@ -365,9 +423,9 @@ public class RunExt {
                 setStatus(StatusExt.NOT_EXECUTED);
             } else if (r == Result.ABORTED) {
                 setStatus(StatusExt.ABORTED);
-            } else if (r == Result.FAILURE ) {
+            } else if (r == Result.FAILURE) {
                 setStatus(StatusExt.FAILED);
-            } else if (r == Result.UNSTABLE ) {
+            } else if (r == Result.UNSTABLE) {
                 setStatus(StatusExt.UNSTABLE);
             } else if (r == Result.SUCCESS) {
                 setStatus(StatusExt.SUCCESS);

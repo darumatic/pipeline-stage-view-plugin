@@ -46,18 +46,52 @@
               <div class="jobName"><span class="badge"><a href="{{this.id}}">{{this.name}}</a></span></div>
               <div class="stage-start-box">
                 <div class="stage-start-time">
-                  <div class="date">{{formatDate this.startTimeMillis 'month'}} {{formatDate this.startTimeMillis 'dom'}}</div>
-                  <div class="time">{{formatDate this.startTimeMillis 'time'}}</div>
+                  {{formatDate this.startTimeMillis 'YYYY/MM/DD h:mm:ss a'}}
                 </div>
-                {{#if this._links.changesets}}<div class="changeset-box" cbwf-controller="run-changesets" objectUrl="{{this._links.changesets.href}}"></div>
-                {{else}}
-                <div class="changeset-box no-changes">No Changes</div>
+                {{#if this.environment}}
+                 <div class="stage-environment">
+                  {{this.environment}}
+                </div>
                 {{/if}}
-                <div class="stage-end-icons extension-dock">
-                  {{#if this._links.artifacts}}
-                  <div cbwf-controller="build-artifacts-popup" objectUrl="{{this._links.artifacts.href}}"><a class="link"><i class="glyphicon glyphicon-download" title="Download"></i></a></div>
-                  {{/if}}
+                {{#if this.changeSet}}
+                <div class="changeset-box">
+                    <div class="changeset-info">
+
+                        <div class="changeset-total" href="javascript:void(0)">
+                        [{{this.changeSets.length}} Commits]
+
+                             <ul class="changeset-details">
+                                 {{#each this.changeSets}}
+                                 <li>
+                                     <span class="changeset-author">{{this.commits.[0].authorJenkinsId}}</span>&nbsp;commits&nbsp;<a href="{{this.commits.[0].commitUrl}}"
+                                                                                                                target="_blank" title="{{this.commits.[0].commitId}}">{{substring this.commits.[0].commitId 0 7}}</a>
+                                 <br>                                                                                <a class="changeset-description" title="{{this.commits.[0]
+                                 .message}}">{{ellipsis this.commits.[0].message 0 40}}</a>
+                                 </li>
+                                 {{/each}}
+                             </ul>
+                        </div>
+
+
+
+
+
+
+                        <span class="changeset-author">{{this.changeSet.commits.[0].authorJenkinsId}}</span>&nbsp;commits&nbsp;<a href="{{this.changeSet.commits.[0].commitUrl}}"
+                        target="_blank" title="{{this
+                                                                         .changeSet
+                                                                         .commits.[0]
+                                                                         .commitId}}">{{substring this
+                        .changeSet
+                        .commits.[0]
+                        .commitId 0 7}}</a>
+                    </div>
+                    <a class="changeset-description" title="{{this.changeSet.commits.[0].message}}">{{ellipsis this.changeSet.commits.[0].message 0 40}}</a>
+                    <div class="changeset-timestamp">{{formatDate this.changeSet.commits.[0].timestamp 'MM/DD h:mm:ss a'}}</div>
                 </div>
+                {{else}}
+                <div class="changeset-box no-changes">No Commits</div>
+                {{/if}}
               </div>
 
               <div class="clearfix"></div>

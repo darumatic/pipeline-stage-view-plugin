@@ -27,10 +27,12 @@ import com.cloudbees.workflow.util.ModelUtil;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import hudson.scm.ChangeLogSet;
 import hudson.scm.RepositoryBrowser;
+import hudson.scm.SCM;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -47,12 +49,14 @@ public class ChangeSetExt {
     private String consoleUrl; // Not a rest endpoint so not including in _links
 
 
-    /** Allows user to disable Jenkins user lookup for commit authors
+    /**
+     * Allows user to disable Jenkins user lookup for commit authors
      * By setting System Property com.cloudbees.workflow.rest.external.ChangeSetExt.resolveCommitAuthors to 'false'
-     * This is a workaround for JENKINS-35484 where user lookup encounters issues */
+     * This is a workaround for JENKINS-35484 where user lookup encounters issues
+     */
     private static boolean resolveCommitAuthors() {
-        String prop = System.getProperty(ChangeSetExt.class.getName()+".resolveCommitAuthors");
-        return (StringUtils.isEmpty(prop)|| Boolean.parseBoolean(prop));
+        String prop = System.getProperty(ChangeSetExt.class.getName() + ".resolveCommitAuthors");
+        return (StringUtils.isEmpty(prop) || Boolean.parseBoolean(prop));
     }
 
     public String getKind() {
@@ -168,12 +172,15 @@ public class ChangeSetExt {
         Iterator<? extends ChangeLogSet.Entry> iterator = changeset.iterator();
 
         RepositoryBrowser<?> repoBrowser = changeset.getBrowser();
-
+        if (repoBrowser == null) {
+            repoBrowser = repositoryBrowser(run);
+        }
         setKind(changeset.getKind());
         setCommits(new ArrayList<Commit>());
         setConsoleUrl(getRunUrl(run) + "changes");
 
-        while(iterator.hasNext()) {
+
+        while (iterator.hasNext()) {
             ChangeLogSet.Entry entry = iterator.next();
             Commit commit = new Commit();
 
@@ -197,6 +204,71 @@ public class ChangeSetExt {
         }
 
         setCommitCount(getCommits().size());
+    }
+
+    private RepositoryBrowser repositoryBrowser(WorkflowRun run) {
+        SCM scm = scm(run);
+        if (scm == null) {
+            return null;
+        }
+
+        String url = url(scm);
+        return new RepositoryBrowser() {
+            @Override
+            public URL getChangeSetLink(ChangeLogSet.Entry entry) throws IOException {
+                if (url == null) {
+                    return null;
+                }
+                int start = url.indexOf("@");
+                if (start < 0) {
+                    return null;
+                }
+                int end = url.indexOf(":", start);
+                if (end < start) {
+                    return null;
+                }
+                String host = url.substring(start + 1, end);
+                String path = url.substring(end + 1);
+                if (path.endsWith(".git")) {
+                    path = path.substring(0, path.length() - ".git".length());
+                }
+                return new URL("http://" + host + "/" + path + "/commit/" + entry.getCommitId());
+            }
+        };
+    }
+
+    private String url(SCM scm) {
+        try {
+            Field userRemoteConfigsFields = scm.getClass().getDeclaredField("userRemoteConfigs");
+            userRemoteConfigsFields.setAccessible(true);
+            List<Object> configs = (List<Object>) userRemoteConfigsFields.get(scm);
+            if (!configs.isEmpty()) {
+                Object config = configs.get(0);
+                Field urlField = config.getClass().getDeclaredField("url");
+                urlField.setAccessible(true);
+                return (String) urlField.get(config);
+            }
+            return null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private SCM scm(WorkflowRun run) {
+        try {
+            Field checkoutsFields = run.getClass().getDeclaredField("checkouts");
+            checkoutsFields.setAccessible(true);
+            List<Object> checkoutList = (List<Object>) checkoutsFields.get(run);
+            if (!checkoutList.isEmpty()) {
+                Object checkout = checkoutList.get(0);
+                Field scmField = checkout.getClass().getDeclaredField("scm");
+                scmField.setAccessible(true);
+                return (SCM) scmField.get(checkout);
+            }
+            return null;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     protected String getRunUrl(WorkflowRun run) {
