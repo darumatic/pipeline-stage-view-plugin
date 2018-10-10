@@ -30,13 +30,18 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import hudson.scm.ChangeLogSet;
 import hudson.util.LogTaskListener;
 import hudson.util.RunList;
+import org.jenkinsci.plugins.workflow.flow.FlowExecution;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -137,7 +142,7 @@ public class JobExt {
 
             if (run.getChangeSets().isEmpty()) {
                 runExt.setChangeSet(lastChangeSet(runs, i));
-                runExt.setChangeSets(null);
+                runExt.setChangeSets(Collections.emptyList());
             } else {
                 List<ChangeLogSet<? extends ChangeLogSet.Entry>> changeSets = run.getChangeSets();
                 runExt.setChangeSet(ChangeSetExt.create(changeSets.get(0), run));
@@ -149,6 +154,8 @@ public class JobExt {
             } catch (IOException | InterruptedException e) {
             }
 
+            runExt.setBranch(branch(run.getExecution()));
+
             runsExt.add(runExt);
             if (since != null && runExt.getName().equals(since)) {
                 break;
@@ -159,6 +166,42 @@ public class JobExt {
             }
         }
         return runsExt;
+    }
+
+    public static String branch(FlowExecution execution) {
+        String script = script(execution);
+        if (script == null) {
+            return null;
+        }
+        int start = script.indexOf("branches:");
+        if (start > 0) {
+            start = script.indexOf("[[", start);
+
+            if (start > 0) {
+                int end = script.indexOf("]]", start);
+                if (end > start) {
+                    String branches = script.substring(start + 2, end);
+                    Pattern pattern = Pattern.compile("[^\']+\'(.*)\'.*");
+
+                    Matcher matcher = pattern.matcher(branches);
+                    if (matcher.matches()) {
+                        return matcher.group(1);
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private static String script(FlowExecution execution) {
+        try {
+            Field scriptField = execution.getClass().getDeclaredField("script");
+            scriptField.setAccessible(true);
+            String script = (String) scriptField.get(execution);
+            return script;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private static ChangeSetExt lastChangeSet(List<WorkflowRun> runs, int currentIndex) {

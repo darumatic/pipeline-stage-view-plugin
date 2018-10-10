@@ -179,7 +179,6 @@ public class ChangeSetExt {
         setCommits(new ArrayList<Commit>());
         setConsoleUrl(getRunUrl(run) + "changes");
 
-
         while (iterator.hasNext()) {
             ChangeLogSet.Entry entry = iterator.next();
             Commit commit = new Commit();
@@ -208,6 +207,7 @@ public class ChangeSetExt {
 
     private RepositoryBrowser repositoryBrowser(WorkflowRun run) {
         SCM scm = scm(run);
+
         if (scm == null) {
             return null;
         }

@@ -64,6 +64,7 @@ public class RunExt {
     private ChangeSetExt changeSet;
     private List<ChangeSetExt> changeSets;
     private String environment;
+    private String branch;
 
     public RunLinks get_links() {
         return _links;
@@ -167,6 +168,14 @@ public class RunExt {
 
     public void setEnvironment(String environment) {
         this.environment = environment;
+    }
+
+    public String getBranch() {
+        return branch;
+    }
+
+    public void setBranch(String branch) {
+        this.branch = branch;
     }
 
     public static final class RunLinks extends Links {
