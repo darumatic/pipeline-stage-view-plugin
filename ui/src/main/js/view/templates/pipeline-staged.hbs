@@ -57,7 +57,7 @@
                 <div class="changeset-box">
                     <div class="changeset-info">
                         <div class="changeset-total" href="javascript:void(0)">
-                        [{{this.branch}}:{{this.changeSets.length}}]
+                        [{{this.branch}}{{#if this.branch}}:{{/if}}{{this.changeSets.length}}]
                              <ul class="changeset-details">
                                  {{#each this.changeSets}}
                                  <li>

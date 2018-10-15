@@ -28,6 +28,7 @@ import com.cloudbees.workflow.rest.hal.Link;
 import com.cloudbees.workflow.rest.hal.Links;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import hudson.scm.ChangeLogSet;
+import hudson.scm.SCM;
 import hudson.util.LogTaskListener;
 import hudson.util.RunList;
 import org.jenkinsci.plugins.workflow.flow.FlowExecution;
@@ -154,7 +155,24 @@ public class JobExt {
             } catch (IOException | InterruptedException e) {
             }
 
-            runExt.setBranch(branch(run.getExecution()));
+            String branch = branch(scm(run));
+            if (branch == null) {
+                branch = branch(run.getExecution());
+                if (branch != null && branch.startsWith("$")) {
+                    try {
+                        branch = run.getEnvironment(new LogTaskListener(null, Level.INFO)).get(branch.substring(1));
+                    } catch (Exception e) {
+                        branch = null;
+                    }
+                }
+            }
+
+            if (branch != null) {
+                branch = branch.replaceAll("\\*/", "");
+            } else {
+                branch = "";
+            }
+            runExt.setBranch(branch);
 
             runsExt.add(runExt);
             if (since != null && runExt.getName().equals(since)) {
@@ -166,6 +184,44 @@ public class JobExt {
             }
         }
         return runsExt;
+    }
+
+
+    private static SCM scm(WorkflowRun run) {
+        try {
+            Field checkoutsFields = run.getClass().getDeclaredField("checkouts");
+            checkoutsFields.setAccessible(true);
+            List<Object> checkoutList = (List<Object>) checkoutsFields.get(run);
+            if (!checkoutList.isEmpty()) {
+                Object checkout = checkoutList.get(0);
+                Field scmField = checkout.getClass().getDeclaredField("scm");
+                scmField.setAccessible(true);
+                return (SCM) scmField.get(checkout);
+            }
+            return null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static String branch(SCM scm) {
+        try {
+            if (scm == null) {
+                return null;
+            }
+            Field branchesField = scm.getClass().getDeclaredField("branches");
+            branchesField.setAccessible(true);
+            List<Object> configs = (List<Object>) branchesField.get(scm);
+            if (!configs.isEmpty()) {
+                Object branchSpec = configs.get(0);
+                Field nameField = branchSpec.getClass().getDeclaredField("name");
+                nameField.setAccessible(true);
+                return (String) nameField.get(branchSpec);
+            }
+            return null;
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     public static String branch(FlowExecution execution) {

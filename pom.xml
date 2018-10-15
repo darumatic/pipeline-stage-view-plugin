@@ -51,16 +51,6 @@
         <workflow.version>2.5</workflow.version>
     </properties>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.jenkins-ci.main</groupId>
-            <artifactId>jenkins-war</artifactId>
-            <type>war</type>
-            <version>2.121.1</version>
-            <scope>test</scope>
-        </dependency>
-    </dependencies>
-
     <repositories>
         <repository>
             <id>repo.jenkins-ci.org</id>
