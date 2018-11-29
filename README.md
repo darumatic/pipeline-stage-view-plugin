@@ -13,7 +13,7 @@ See the [Plugin Wiki](https://wiki.jenkins-ci.org/display/JENKINS/Pipeline+Stage
 - Display environment
 - Add pipeline promote build support
 
-<img src="doc/pipelinestage-view.png"/>
+<img src="doc/pipeline-stage-view.png"/>
 
 ## How to install
 
