@@ -176,6 +176,7 @@
         position: absolute;
         width: 100px;
       }
+
       .stage-start {
         position: absolute;
         left: 0px;
@@ -241,6 +242,72 @@
             margin-right: 5px;
             color: #FFF;
           }
+          .stage-environment-from {
+
+          }
+          .promote {
+            display: none;
+            position: absolute;
+            bottom: 0.2em;
+            right: 5px;
+            text-shadow: none;
+          }
+          .promote-btn {
+            background-color: #4b758b;
+            color: #eee;
+            border: 1px solid #5788a1;
+            padding: 0 15px 0 3px;
+            font-size: 1em;
+            line-height: 1.5em;
+          }
+          .promote-btn:after {
+            content: '▾';
+            position: absolute;
+            top: 0;
+            right: 3px;
+          }
+          .promote.active .promote-btn:after {
+            content: '▴';
+          }
+          .promote.active .promote-dropdown { /* display tooltip on hover */
+            display: block;
+          }
+          .promote-dropdown {
+            top: 2em;
+            background-color: #FFF;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            display: none;
+            position: absolute;
+            -webkit-transition: opacity 0.5s;
+            -moz-transition: opacity 0.5s;
+            -ms-transition: opacity 0.5s;
+            -o-transition: opacity 0.5s;
+            transition: opacity 0.5s;
+            width: 208px;
+            z-index: 5000;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+            text-shadow: #fff 0 0 2px, #fff 0 1px 1px;
+            border-radius: 4px;
+            padding: 10px 10px 10px 20px;
+            list-style: square;
+          }
+          .promote-dropdown p {
+            margin-top: 0;
+            color: #777;
+            font-size: 1em;
+          }
+          .promote-submit {
+            margin-top: 20px;
+            background-color: #4b758b;
+            color: #eee;
+            border: 1px solid #5788a1;
+            font-size: 12px;
+            padding: 3px 20px;
+          }
+          .promote-env {
+            line-height: 1em;
+            vertical-align: top;
+          }
           .stage-start-time {
             border-radius: 0;
             float: none;
@@ -255,13 +322,13 @@
             display: inline-block;
           }
           .changeset-total:hover .changeset-details { /* display tooltip on hover */
-            opacity: 1;
+            display: block;
           }
           .changeset-details {
             top: 1.5em;
             background-color: #FFF;
             border: 1px solid rgba(0, 0, 0, 0.1);
-            opacity: 0;
+            display: none;
             position: absolute;
             -webkit-transition: opacity 0.5s;
             -moz-transition: opacity 0.5s;
@@ -295,6 +362,11 @@
           }
         }
 
+        &:hover {
+          .promote {
+            display: block;
+          }
+        }
       }
 
       .stage-wrapper {

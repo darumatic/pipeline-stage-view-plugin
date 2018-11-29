@@ -34,7 +34,7 @@ var extensionPointContainer = new ExtensionPointContainer();
 
 exports.extensionPointContainer = extensionPointContainer;
 
-exports.render = function (jobRunsData, onElement) {
+exports.render = function(jobRunsData, onElement) {
     var mvcContext = this;
     var fragCaption = mvcContext.attr('fragCaption');
 
@@ -44,6 +44,60 @@ exports.render = function (jobRunsData, onElement) {
     this.onModelChange(function(event) {
         _render(event.modelData, onElement, fragCaption);
     });
+
+    (function($) {
+        var jobURL = $('.pipeline-staged').attr('objecturl');
+        console.log(jobURL);
+
+        $.ajax({
+            url: jobURL + "pipeline-promote/env",
+            dataType: 'json'
+        }).success(function(envs) {
+            $(document).on('click', ".promote-btn", function() {
+                var html = "";
+                for (var i = 0; i < envs.length; i++) {
+                    html += "<input type=\"checkbox\" value=\"" + envs[i] + "\"> " + envs[i];
+                    html += "&nbsp;&nbsp;"
+                }
+                var parent = $(this).parents(".promote");
+                parent.find('.promote-env').html(html);
+                parent.toggleClass("active");
+            });
+
+            $(document).on('click', ".promote-submit", function() {
+                var $button = $(this);
+                var $parent = $button.parents(".promote");
+
+                console.log($parent);
+                var env = "";
+                $parent.find("input").each(function() {
+                    var $input = $(this);
+                    console.log($input);
+                    if ($input.is(':checked')) {
+                        env += $input.val() + ',';
+                    }
+                });
+                console.log(env);
+                if (env) {
+                    $parent.removeClass("active");
+                    $parent.addClass("loading");
+                    var id = $parent.data("id");
+                    var job = $parent.data("job");
+                    console.log('promote ' + job + "#" + id + " to " + env);
+                    $.ajax({
+                        url: jobURL + id + "/pipeline-promote/promote?env=" + env
+                    }).done(function(data) {
+                        $parent.removeClass("loading");
+                        if (!data.success) {
+                            alert(data.message);
+                        }
+                    });
+                }
+            });
+        }).fail(function() {
+            $(".promote").remove();
+        });
+    })(jqProxy.getJQuery());
 };
 
 function _render(jobRunsData, onElement, fragCaption) {

@@ -50,9 +50,10 @@
                 </div>
                 {{#if this.environment}}
                  <div class="stage-environment">
-                  {{this.environment}}
-                </div>
+                  {{this.environment}} {{#if this.promoteFromVersion}}&lt; {{this.promoteFromEnvironment}}#{{this.promoteFromVersion}}{{/if}}
+                 </div>
                 {{/if}}
+
                 {{#if this.changeSet}}
                 <div class="changeset-box">
                     <div class="changeset-info">
@@ -65,7 +66,7 @@
                                      <span class="changeset-author" title="{{this.commits.[0].authorJenkinsId}}">{{ellipsis this.commits.[0].authorJenkinsId 0 15}}</span>&nbsp;<a href="{{this.commits.[0].commitUrl}}"
                                                                                                                 target="_blank" title="{{this.commits.[0].commitId}}">{{substring this.commits.[0].commitId 0 7}}</a>
                                  <br>                                                                                <a class="changeset-description" title="{{this.commits.[0]
-                                 .message}}">{{ellipsis this.commits.[0].message 0 40}}</a>
+                                 .message}}">{{ellipsis this.commits.[0].message 0 30}}</a>
                                  </li>
                                  {{/each}}
                              </ul>
@@ -81,12 +82,24 @@
                         .commits.[0]
                         .commitId 0 7}}</a>
                     </div>
-                    <a class="changeset-description" title="{{this.changeSet.commits.[0].message}}">{{ellipsis this.changeSet.commits.[0].message 0 40}}</a>
-                    <div class="changeset-timestamp">{{formatDate this.changeSet.commits.[0].timestamp 'MM/DD h:mm:ss a'}}</div>
+                    <a class="changeset-description" title="{{this.changeSet.commits.[0].message}}">{{ellipsis this.changeSet.commits.[0].message 0 30}}</a>
+                    <div class="changeset-timestamp">{{formatDate this.changeSet.commits.[0].timestamp 'MM/DD h:mm:ss a'}} </div>
+
                 </div>
                 {{else}}
                 <div class="changeset-box no-changes">No Commits</div>
                 {{/if}}
+
+                {{#ifCond this.status '==' 'SUCCESS'}}
+                <div class="promote" data-id="{{this.id}}" data-job="{{this.jobName}}">
+                    <button class="promote-btn">Promote</button>
+                    <div class="promote-dropdown">
+                       <p>Select promote to environments</p>
+                       <div class="promote-env"></div>
+                       <button class="promote-submit">Promote</button>
+                    </div>
+                </div>
+                {{/ifCond}}
               </div>
 
               <div class="clearfix"></div>

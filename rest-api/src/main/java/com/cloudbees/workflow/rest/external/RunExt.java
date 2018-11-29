@@ -54,6 +54,7 @@ public class RunExt {
     private RunLinks _links;
     private String id;
     private String name;
+    private String jobName;
     private StatusExt status;
     private long startTimeMillis;
     private long endTimeMillis;
@@ -65,6 +66,17 @@ public class RunExt {
     private List<ChangeSetExt> changeSets;
     private String environment;
     private String branch;
+    private String promoteFromEnvironment;
+    private String promoteFromVersion;
+    private String promoteURL;
+
+    public String getJobName() {
+        return jobName;
+    }
+
+    public void setJobName(String jobName) {
+        this.jobName = jobName;
+    }
 
     public RunLinks get_links() {
         return _links;
@@ -378,6 +390,22 @@ public class RunExt {
             FlowNodeUtil.cacheRun(run, myRun);
         }
         return myRun;
+    }
+
+    public String getPromoteFromEnvironment() {
+        return promoteFromEnvironment;
+    }
+
+    public void setPromoteFromEnvironment(String promoteFromBuild) {
+        this.promoteFromEnvironment = promoteFromBuild;
+    }
+
+    public String getPromoteFromVersion() {
+        return promoteFromVersion;
+    }
+
+    public void setPromoteFromVersion(String promoteFromVersion) {
+        this.promoteFromVersion = promoteFromVersion;
     }
 
     public static RunExt createNew(WorkflowRun run) {

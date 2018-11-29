@@ -1,0 +1,4 @@
+<?jelly escape-by-default='true'?>
+<div>
+  Provides a Promote REST API to access pipeline and pipeline run data.
+</div>

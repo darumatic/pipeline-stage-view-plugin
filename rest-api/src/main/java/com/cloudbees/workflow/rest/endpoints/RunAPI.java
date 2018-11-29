@@ -57,6 +57,9 @@ import java.util.List;
  */
 @Extension
 public class RunAPI extends AbstractWorkflowRunActionHandler {
+    static {
+        System.setProperty("hudson.model.ParametersAction.keepUndefinedParameters", "true");
+    }
 
     public static String getUrl(WorkflowRun run) {
         return ModelUtil.getFullItemUrl(run.getUrl()) + URL_BASE + "/";
@@ -175,7 +178,7 @@ public class RunAPI extends AbstractWorkflowRunActionHandler {
 
         if (inputAction == null) {
             throw new ServletException("Error processing Input Submit request. This Run instance does not" +
-                    " have an InputAction.");
+                " have an InputAction.");
         }
 
         InputStepExecution execution = inputAction.getExecution(inputId);
@@ -187,7 +190,7 @@ public class RunAPI extends AbstractWorkflowRunActionHandler {
             // If the id is coming from a different source (and is not pre-normalized), this
             // assumption obviously fails, as will the call to InputAction.getExecution(id).
             throw new ServletException(String.format("Error processing Input Submit request. This Run instance does not" +
-                    " have an Input with an ID of '%s'. The input ID may not be pre-normalized appropriately.", inputId));
+                " have an Input with an ID of '%s'. The input ID may not be pre-normalized appropriately.", inputId));
         }
 
         try {

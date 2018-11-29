@@ -27,6 +27,8 @@ import com.cloudbees.workflow.rest.endpoints.JobAPI;
 import com.cloudbees.workflow.rest.hal.Link;
 import com.cloudbees.workflow.rest.hal.Links;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import hudson.EnvVars;
+import hudson.model.Run;
 import hudson.scm.ChangeLogSet;
 import hudson.scm.SCM;
 import hudson.util.LogTaskListener;
@@ -140,37 +142,44 @@ public class JobExt {
         for (int i = 0; i < runs.size(); i++) {
             WorkflowRun run = runs.get(i);
             RunExt runExt = (fullStages) ? RunExt.create(run) : RunExt.create(run).createWrapper();
-
+            runExt.setJobName(jobName(run));
             if (run.getChangeSets().isEmpty()) {
-                runExt.setChangeSet(lastChangeSet(runs, i));
+                if (!run.isBuilding()) {
+                    runExt.setChangeSet(lastChangeSet(runs, i));
+                }
                 runExt.setChangeSets(Collections.emptyList());
             } else {
                 List<ChangeLogSet<? extends ChangeLogSet.Entry>> changeSets = run.getChangeSets();
                 runExt.setChangeSet(ChangeSetExt.create(changeSets.get(0), run));
                 runExt.setChangeSets(changeSets.stream().map(changeSet -> ChangeSetExt.create(changeSet, run)).collect(Collectors.toList()));
             }
-
             try {
-                runExt.setEnvironment(run.getEnvironment(new LogTaskListener(null, Level.INFO)).get("ENVIRONMENT"));
+                EnvVars environment = run.getEnvironment(new LogTaskListener(null, Level.INFO));
+                runExt.setEnvironment(environment.get("ENVIRONMENT"));
+                runExt.setPromoteFromEnvironment(environment.get("PROMOTE_FROM_ENVIRONMENT"));
+                runExt.setPromoteFromVersion(environment.get("PROMOTE_FROM_VERSION"));
             } catch (IOException | InterruptedException e) {
             }
 
             String branch = branch(scm(run));
             if (branch == null) {
                 branch = branch(run.getExecution());
-                if (branch != null && branch.startsWith("$")) {
+            }
+            if (branch != null) {
+                if (branch.startsWith("$")) {
+                    branch = branch.substring(1);
+                    if (branch.startsWith("{") && branch.endsWith("}")) {
+                        branch = branch.substring(1, branch.length() - 1);
+                    }
                     try {
-                        branch = run.getEnvironment(new LogTaskListener(null, Level.INFO)).get(branch.substring(1));
+                        EnvVars environment = run.getEnvironment(new LogTaskListener(null, Level.INFO));
+                        branch = environment.get(branch);
                     } catch (Exception e) {
                         branch = null;
                     }
+                } else {
+                    branch = branch.replaceAll("\\*/", "");
                 }
-            }
-
-            if (branch != null) {
-                branch = branch.replaceAll("\\*/", "");
-            } else {
-                branch = "";
             }
             runExt.setBranch(branch);
 
@@ -186,6 +195,16 @@ public class JobExt {
         return runsExt;
     }
 
+    private static String jobName(WorkflowRun run) {
+        try {
+            Field projectField = Run.class.getDeclaredField("project");
+            projectField.setAccessible(true);
+            WorkflowJob job = (WorkflowJob) projectField.get(run);
+            return job.getName();
+        } catch (Exception e) {
+            return null;
+        }
+    }
 
     private static SCM scm(WorkflowRun run) {
         try {
