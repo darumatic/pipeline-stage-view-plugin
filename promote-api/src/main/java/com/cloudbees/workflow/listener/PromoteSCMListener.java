@@ -12,6 +12,8 @@ import hudson.model.TaskListener;
 import hudson.model.listeners.SCMListener;
 import hudson.scm.SCM;
 import hudson.scm.SCMRevisionState;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.CheckForNull;
 import java.io.File;
@@ -19,12 +21,15 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author chi
  */
 @Extension
 public class PromoteSCMListener extends SCMListener {
+    private final Logger logger = LoggerFactory.getLogger(PromoteSCMListener.class);
+
     @Override
     public void onCheckout(Run<?, ?> build, SCM scm, FilePath workspace, TaskListener listener, @CheckForNull File changelogFile, @CheckForNull SCMRevisionState pollingBaseline) throws Exception {
         if (isPromoteBuild(build)) {
@@ -33,8 +38,46 @@ public class PromoteSCMListener extends SCMListener {
         ParametersAction action = build.getAction(ParametersAction.class);
         String name = scmName(scm);
         if (name != null) {
-            ParameterValue commit = new StringParameterValue(name.toUpperCase() + "_GIT_COMMIT", lastCommit(workspace.getRemote()));
+            String remote = workspace.getRemote();
+            Optional<String> relativeDirectory = relativeDirectory(scm);
+            if (relativeDirectory.isPresent()) {
+                remote = relativePath(remote, relativeDirectory.get());
+            }
+            ParameterValue commit = new StringParameterValue(name.toUpperCase() + "_GIT_COMMIT", lastCommit(remote));
             appendParameter(action, commit);
+        }
+    }
+
+    private String relativePath(String base, String path) {
+        StringBuilder b = new StringBuilder(base);
+        if (!base.endsWith(File.separator)) {
+            b.append(File.separator);
+        }
+        if (path.startsWith(File.separator)) {
+            b.append(path, File.separator.length(), path.length());
+        } else {
+            b.append(path);
+        }
+        return b.toString();
+    }
+
+    private Optional<String> relativeDirectory(SCM scm) {
+        try {
+            Field extensionsField = ReflectUtil.field(scm.getClass(), "extensions");
+            extensionsField.setAccessible(true);
+            List extensions = ((List) extensionsField.get(scm));
+
+            for (Object extension : extensions) {
+                if (extension.getClass().getSimpleName().equals("RelativeTargetDirectory")) {
+                    Field relativeTargetDirField = ReflectUtil.field(extension.getClass(), "relativeTargetDir");
+                    relativeTargetDirField.setAccessible(true);
+                    return Optional.of((String) relativeTargetDirField.get(extension));
+                }
+            }
+            return Optional.empty();
+        } catch (Exception e) {
+            logger.error("failed to get relative directory", e);
+            return Optional.empty();
         }
     }
 
@@ -55,7 +98,7 @@ public class PromoteSCMListener extends SCMListener {
             }
             return (String) name;
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("failed to get scm name", e);
             return null;
         }
     }
