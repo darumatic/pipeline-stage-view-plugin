@@ -34,77 +34,85 @@ Pipeline script will use these variables to test if current build is promote bui
 
 ### How to use it
 
-1. Create a new pipeline job
-2. Select "This project is parameterized", add String parameter ENVIRONMENT
-3. Config pipeline with SCM
-<img src="doc/job-config.png"/>
+1. Create a new pipeline job.
+2. Select "This project is parameterized", add String parameter ENVIRONMENT.
+3. Config pipeline with GIT SCM.
+   <img src="doc/job-config.png"/>
 4. Edit Jenkinsfile to test promote build. An example:
+    > NOTE: 
+    > SCM checkout in Jenkinsfile must have a name. The git commit hash variable is $NAME_GIT_COMMIT. If there no name, the variable is skipped.
 
-> NOTE: 
-> 1. SCM in Jenkinsfile must has a name. So we could save its git commit hash to variable $NAME_GIT_COMMIT
-
-```
-pipeline {
-    agent any
-
-    stages {
-        stage('Checkout Project2.') {
-            steps {
-                script {
-                    if (params.PROMOTE_FROM_ENVIRONMENT != null) {
-                        checkout([$class: 'GitSCM',
-                        		branches: [[name: params.PROJECT2_GIT_COMMIT]],
-                        		userRemoteConfigs: [[url: 'https://github.com/Chi996/jenkins-test-project2.git', name:'project2']]])
-                    }else{
-                        checkout([$class: 'GitSCM',
-                                 branches: [[name: params.ENVIRONMENT]],
-                                 userRemoteConfigs: [[url: 'https://github.com/Chi996/jenkins-test-project2.git', name:'project2']]])
+    ```
+    pipeline {
+        agent any
+    
+        stages {
+            stage('Checkout Project2.') {
+                steps {
+                    script {
+                        if (params.PROMOTE_FROM_ENVIRONMENT != null) {
+                            checkout([$class: 'GitSCM',
+                                    branches: [[name: params.PROJECT2_GIT_COMMIT]],
+                                    userRemoteConfigs: [[url: 'https://github.com/Chi996/jenkins-test-project2.git', name:'project2']]])
+                        }else{
+                            checkout([$class: 'GitSCM',
+                                     branches: [[name: params.ENVIRONMENT]],
+                                     userRemoteConfigs: [[url: 'https://github.com/Chi996/jenkins-test-project2.git', name:'project2']]])
+                        }
                     }
                 }
             }
-        }
-        stage('Build Project2') {
-             steps {
-                 sh 'ls -al'
-             }
-        }
-        stage('Checkout Project3') {
-            steps {
-                script {
-                    if (params.PROMOTE_FROM_ENVIRONMENT != null) {
-                        checkout([$class: 'GitSCM',
-                                branches: [[name: params.PROJECT3_GIT_COMMIT]],
-                                userRemoteConfigs: [[url: 'https://github.com/Chi996/jenkins-test-project3.git', name:'project3']]])
-                    }else{
-                        checkout([$class: 'GitSCM',
-                                 branches: [[name: params.ENVIRONMENT]],
-                                 userRemoteConfigs: [[url: 'https://github.com/Chi996/jenkins-test-project3.git', name:'project3']]])
+            stage('Build Project2') {
+                 steps {
+                     sh 'ls -al'
+                 }
+            }
+            stage('Checkout Project3') {
+                steps {
+                    script {
+                        if (params.PROMOTE_FROM_ENVIRONMENT != null) {
+                            checkout([$class: 'GitSCM',
+                                    branches: [[name: params.PROJECT3_GIT_COMMIT]],
+                                    userRemoteConfigs: [[url: 'https://github.com/Chi996/jenkins-test-project3.git', name:'project3']]])
+                        }else{
+                            checkout([$class: 'GitSCM',
+                                     branches: [[name: params.ENVIRONMENT]],
+                                     userRemoteConfigs: [[url: 'https://github.com/Chi996/jenkins-test-project3.git', name:'project3']]])
+                        }
                     }
                 }
             }
-        }
-        stage('Build Project3') {
-             steps {
-                sh 'ls -al'
-             }
-        }
-        stage('Print params'){
-            steps {
-                echo "ENVIRONMENT: ${params.ENVIRONMENT}"
-                echo "PROMOTE_FROM_ENVIRONMENT: ${params.PROMOTE_FROM_ENVIRONMENT}"
-                echo "PROMOTE_FROM_VERSION: ${params.PROMOTE_FROM_VERSION}"
-
-                echo "ROOT_GIT_COMMIT: ${params.ROOT_GIT_COMMIT}"
-                echo "PROJECT2_GIT_COMMIT: ${params.PROJECT2_GIT_COMMIT}"
-                echo "PROJECT3_GIT_COMMIT: ${params.PROJECT3_GIT_COMMIT}"
+            stage('Build Project3') {
+                 steps {
+                    sh 'ls -al'
+                 }
+            }
+            stage('Print params'){
+                steps {
+                    echo "ENVIRONMENT: ${params.ENVIRONMENT}"
+                    echo "PROMOTE_FROM_ENVIRONMENT: ${params.PROMOTE_FROM_ENVIRONMENT}"
+                    echo "PROMOTE_FROM_VERSION: ${params.PROMOTE_FROM_VERSION}"
+    
+                    echo "ROOT_GIT_COMMIT: ${params.ROOT_GIT_COMMIT}"
+                    echo "PROJECT2_GIT_COMMIT: ${params.PROJECT2_GIT_COMMIT}"
+                    echo "PROJECT3_GIT_COMMIT: ${params.PROJECT3_GIT_COMMIT}"
+                }
             }
         }
     }
-}
-```
+    ```
 
+4. Create a success normal build.
+5. Trigger a promote build.
+   <img src="doc/promote-popup.png"/>
+   
+   When mouse hover the build's stage view UI, a popup is display. Select the target environments, click promote button. 
+   The pipeline promote plugin will trigger build for each environment.
 
-
+6. The promote build UI
+   <img src="doc/promote-build.png"/>
+   
+   The "PROD <= UAT#26" means current build is for PROD environment and it is promoted from UAT build#26.
 
 
 
