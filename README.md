@@ -4,31 +4,44 @@ This plugin is a fork of Jenkins Pipeline Stage View Plugin, a graphical swimlan
 
 See the [Plugin Wiki](https://wiki.jenkins-ci.org/display/JENKINS/Pipeline+Stage+View+Plugin) for release information and documentation. 
 
-## Custom Enhancements: 
+## Stage View Enhancement: 
 
 - Display last commit branch name
 - Display last commit author, description
 - Display change set total commits
 - Display change set commits history with popup
-- Display environment
-- Add pipeline promote build support
+- Display ENVIRONMENT
+- Pipeline promote build support
 
 <img src="doc/pipeline-stage-view.png"/>
 
 ## How to install
 
-1. Download `pipeline-rest-api.jpi`, `pipeline-promote-api.jpi`, `pipeline-stage-view.jpi`
-2. `cd $JENKINS_HOME`, copy and replace the 3 files
+1. Download `pipeline-rest-api.jpi`, `pipeline-promote-api.jpi`, `pipeline-stage-view.jpi` from releases.
+2. Upload the 3 Jenkins plugin files to Jenkins plugins directory, for Ubuntu, the directory should be `/var/lib/jenkins/plugins`
+3. Restart Jenkins
 
-> Note: Skip pipeline-promote-api.jpi will disable the promote function from pipeline-state-view. 
+> Note: If pipeline-promote-api.jpi not installed. It will disable the promote function from pipeline-state-view. 
 
-## How to use promote plugin
+## pipeline-promote plugin
+
+Pipeline-promote plugin is used to promote success build to other environments. The plugin only logs Git commit hash and promote related variables. 
+Pipeline script will use these variables to test if current build is promote build, and checkout corresponding commit. 
+
+- It supports 3 preset environments: SIT/UAT/PROD. 
+- It logs each build's Git commit hash as variables for each SCM
+- For promote build, it logs PROMOTE_FROM_ENVIRONMENT and PROMOTE_FROM_VERSION variables.
+
+### How to use it
 
 1. Create a new pipeline job
 2. Select "This project is parameterized", add String parameter ENVIRONMENT
 3. Config pipeline with SCM
 <img src="doc/job-config.png"/>
-4. Edit Jenkinsfile. An example:
+4. Edit Jenkinsfile to test promote build. An example:
+
+> NOTE: 
+> 1. SCM in Jenkinsfile must has a name. So we could save its git commit hash to variable $NAME_GIT_COMMIT
 
 ```
 pipeline {
@@ -90,12 +103,6 @@ pipeline {
 }
 ```
 
-If promote plugin is enabled. For every build, it will save Git commit hash to build parameters. 
-For promote build, we will have extra parameters, PROMOTE_FROM_ENVIRONMENT and PROMOTE_FROM_VERSION. 
-
-> NOTE: 
-> 1. Checkout in Jenkinsfile must has a name. So we could save its git commit hash to variable $NAME_GIT_COMMIT
-> 2. Only support SIT/UAT/PROD environments. 
 
 
 

@@ -24,6 +24,7 @@
 package com.cloudbees.workflow.rest.endpoints;
 
 import com.cloudbees.workflow.rest.AbstractAPIActionHandler;
+import com.cloudbees.workflow.util.PromoteUtil;
 import com.cloudbees.workflow.util.ServeJson;
 import hudson.Extension;
 import hudson.model.Action;
@@ -36,14 +37,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import static com.cloudbees.workflow.rest.endpoints.Environments.ALL;
-
 @Extension
 public class PromoteEnvAPI extends AbstractAPIActionHandler {
     @Restricted(DoNotUse.class)
     @ServeJson
     public List<String> doEnv() {
-        return ALL;
+        return PromoteUtil.ENVIRONMENTS;
     }
 
     @Override

@@ -25,6 +25,7 @@ package com.cloudbees.workflow.rest.endpoints;
 
 import com.cloudbees.workflow.rest.AbstractWorkflowRunActionHandler;
 import com.cloudbees.workflow.rest.endpoints.promote.PromoteBuild;
+import com.cloudbees.workflow.util.PromoteUtil;
 import com.cloudbees.workflow.util.ReflectUtil;
 import com.cloudbees.workflow.util.ServeJson;
 import com.google.common.base.Splitter;
@@ -81,7 +82,7 @@ public class PromoteAPI extends AbstractWorkflowRunActionHandler {
 
         List<String> environments = ImmutableList.copyOf(Splitter.on(",").trimResults().omitEmptyStrings().split(env));
         for (String environment : environments) {
-            if (!Environments.ALL.contains(environment)) {
+            if (!PromoteUtil.ENVIRONMENTS.contains(environment)) {
                 PromoteBuild build = new PromoteBuild();
                 build.environments = ImmutableList.of();
                 build.success = false;
@@ -120,9 +121,9 @@ public class PromoteAPI extends AbstractWorkflowRunActionHandler {
         ParametersAction action = currentBuild.getAction(ParametersAction.class);
 
         try {
-            ParameterValue environment = new StringParameterValue("ENVIRONMENT", env);
-            ParameterValue fromEnvironment = new StringParameterValue("PROMOTE_FROM_ENVIRONMENT", currentBuild.getEnvironment().get("ENVIRONMENT"));
-            ParameterValue fromVersion = new StringParameterValue("PROMOTE_FROM_VERSION", currentBuild.getEnvironment().get("BUILD_NUMBER"));
+            ParameterValue environment = new StringParameterValue(PromoteUtil.ENVIRONMENT, env);
+            ParameterValue fromEnvironment = new StringParameterValue(PromoteUtil.PROMOTE_FROM_ENVIRONMENT, currentBuild.getEnvironment().get(PromoteUtil.ENVIRONMENT));
+            ParameterValue fromVersion = new StringParameterValue(PromoteUtil.PROMOTE_FROM_VERSION, currentBuild.getEnvironment().get("BUILD_NUMBER"));
             actions.add(action.createUpdated(Arrays.asList(environment, fromEnvironment, fromVersion)));
         } catch (Exception e) {
             logger.error("failed to copy promotion variables", e);
