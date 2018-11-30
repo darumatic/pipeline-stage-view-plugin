@@ -38,7 +38,7 @@ Pipeline script will use these variables to test if current build is promote bui
 2. Select "This project is parameterized", add String parameter ENVIRONMENT.
 3. Config pipeline with GIT SCM.
    <img src="doc/job-config.png"/>
-4. Edit Jenkinsfile to test promote build. An example:
+4. Edit Jenkinsfile to use promote variables. An example:
     > NOTE: 
     > SCM checkout in Jenkinsfile must have a name. The git commit hash variable is $NAME_GIT_COMMIT. If there no name, the variable is skipped.
 
@@ -104,12 +104,14 @@ Pipeline script will use these variables to test if current build is promote bui
 
 4. Create a success normal build.
 5. Trigger a promote build.
+   
    <img src="doc/promote-popup.png"/>
    
    When mouse hover the build's stage view UI, a popup is display. Select the target environments, click promote button. 
    The pipeline promote plugin will trigger build for each environment.
 
 6. The promote build UI
+   
    <img src="doc/promote-build.png"/>
    
    The "PROD <= UAT#26" means current build is for PROD environment and it is promoted from UAT build#26.
