@@ -158,7 +158,7 @@ The tutorial is for Ubuntu linux.
     PROJECT3_GIT_COMMIT: 15024c8
     ```
     
-    Verify the promote checkout SCP is UAT files.
+    Verify the promote build with UAT files.
     
     ```
     [pipeline-stage-view-plugin\ui\work\workspace\job] Running shell script
