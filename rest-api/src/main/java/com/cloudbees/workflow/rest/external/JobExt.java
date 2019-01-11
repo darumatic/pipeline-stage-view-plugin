@@ -40,7 +40,6 @@ import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
@@ -143,16 +142,8 @@ public class JobExt {
             WorkflowRun run = runs.get(i);
             RunExt runExt = (fullStages) ? RunExt.create(run) : RunExt.create(run).createWrapper();
             runExt.setJobName(jobName(run));
-            if (run.getChangeSets().isEmpty()) {
-                if (!run.isBuilding()) {
-                    runExt.setChangeSet(lastChangeSet(runs, i));
-                }
-                runExt.setChangeSets(Collections.emptyList());
-            } else {
-                List<ChangeLogSet<? extends ChangeLogSet.Entry>> changeSets = run.getChangeSets();
-                runExt.setChangeSet(ChangeSetExt.create(changeSets.get(0), run));
-                runExt.setChangeSets(changeSets.stream().map(changeSet -> ChangeSetExt.create(changeSet, run)).collect(Collectors.toList()));
-            }
+            runExt.setChangeSet(lastChangeSet(runs, i));
+            runExt.setChangeSets(run.getChangeSets().stream().map(changeSet -> ChangeSetExt.create(changeSet, run)).collect(Collectors.toList()));
             try {
                 EnvVars environment = run.getEnvironment(new LogTaskListener(null, Level.INFO));
                 runExt.setEnvironment(environment.get("ENVIRONMENT"));
@@ -272,23 +263,55 @@ public class JobExt {
         try {
             Field scriptField = execution.getClass().getDeclaredField("script");
             scriptField.setAccessible(true);
-            String script = (String) scriptField.get(execution);
-            return script;
+            return (String) scriptField.get(execution);
         } catch (Exception e) {
             return null;
         }
     }
 
     private static ChangeSetExt lastChangeSet(List<WorkflowRun> runs, int currentIndex) {
-        for (int i = currentIndex + 1; i < runs.size(); i++) {
-            WorkflowRun run = runs.get(i);
-            List<ChangeLogSet<? extends ChangeLogSet.Entry>> changeSets = run.getChangeSets();
-            if (!changeSets.isEmpty()) {
-                ChangeLogSet<? extends ChangeLogSet.Entry> entries = changeSets.get(0);
-                return ChangeSetExt.create(entries, run);
+        WorkflowRun run = runs.get(currentIndex);
+        if (isPromotedVersion(run)) {
+            int version = promotedVersion(run);
+            for (int i = 0; i < runs.size(); i++) {
+                WorkflowRun workflowRun = runs.get(i);
+                if (workflowRun.getNumber() == version) {
+                    return lastChangeSet(runs, i);
+                }
             }
         }
-        return null;
+
+        List<ChangeLogSet<? extends ChangeLogSet.Entry>> changeSets = run.getChangeSets();
+        if (changeSets.isEmpty()) {
+            for (int i = currentIndex + 1; i < runs.size(); i++) {
+                changeSets = runs.get(i).getChangeSets();
+                if (!changeSets.isEmpty()) {
+                    ChangeLogSet<? extends ChangeLogSet.Entry> entries = changeSets.get(0);
+                    return ChangeSetExt.create(entries, run);
+                }
+            }
+            return null;
+        } else {
+            return ChangeSetExt.create(changeSets.get(0), run);
+        }
     }
 
+    private static int promotedVersion(WorkflowRun run) {
+        try {
+            EnvVars environment = run.getEnvironment(new LogTaskListener(null, Level.INFO));
+            Object promoteFromVersion = environment.get("PROMOTE_FROM_VERSION");
+            return Integer.parseInt(promoteFromVersion.toString());
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    private static boolean isPromotedVersion(WorkflowRun run) {
+        try {
+            EnvVars environment = run.getEnvironment(new LogTaskListener(null, Level.INFO));
+            return environment.containsKey("PROMOTE_FROM_VERSION");
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }
