@@ -82,7 +82,7 @@ public class PromoteAPI extends AbstractWorkflowRunActionHandler {
 
         List<String> environments = ImmutableList.copyOf(Splitter.on(",").trimResults().omitEmptyStrings().split(env));
         for (String environment : environments) {
-            if (!PromoteUtil.ENVIRONMENTS.contains(environment)) {
+            if (!PromoteUtil.environments(getRun().getParent()).contains(environment)) {
                 PromoteBuild build = new PromoteBuild();
                 build.environments = ImmutableList.of();
                 build.success = false;

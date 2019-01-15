@@ -21,22 +21,38 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package com.cloudbees.workflow.rest.endpoints;
+package com.cloudbees.workflow.rest;
 
-import com.cloudbees.workflow.rest.AbstractWorkflowJobActionHandler;
-import com.cloudbees.workflow.util.PromoteUtil;
-import com.cloudbees.workflow.util.ServeJson;
-import hudson.Extension;
-import org.kohsuke.accmod.Restricted;
-import org.kohsuke.accmod.restrictions.DoNotUse;
+import hudson.model.Action;
+import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 
-import java.util.List;
+import javax.annotation.Nonnull;
+import java.util.Collection;
+import java.util.Collections;
 
-@Extension
-public class PromoteEnvAPI extends AbstractWorkflowJobActionHandler {
-    @Restricted(DoNotUse.class)
-    @ServeJson
-    public List<String> doEnv() {
-        return PromoteUtil.environments(getJob());
+/**
+ * @author <a href="mailto:tom.fennelly@gmail.com">tom.fennelly@gmail.com</a>
+ */
+public abstract class AbstractWorkflowJobActionHandler extends AbstractAPIActionHandler<WorkflowJob> {
+
+    @Override
+    public Class<WorkflowJob> type() {
+        return WorkflowJob.class;
+    }
+
+    protected WorkflowJob getJob() {
+        return target;
+    }
+
+    @Nonnull
+    @Override
+    public Collection<? extends Action> createFor(@Nonnull WorkflowJob target) {
+        try {
+            AbstractWorkflowJobActionHandler instance = getClass().newInstance();
+            instance.target = target;
+            return Collections.singleton(instance);
+        } catch (Exception e) {
+            throw new IllegalStateException(String.format("Workflow API Action class '%s' does not implement a public default constructor.", getClass().getName()));
+        }
     }
 }

@@ -19,7 +19,7 @@ See the [Plugin Wiki](https://wiki.jenkins-ci.org/display/JENKINS/Pipeline+Stage
 
 Pipeline-promote plugin is used to promote success builds to other environment. 
 
-- It supports 3 preset environments: SIT/UAT/PROD. 
+- It reads target environments from ENVIRONMENT job definition (Must be choice parameter). 
 - It saves each build's Git commit hash as variables(SCM_NAME_GIT_COMMIT) for each SCM.
 - For promote build, it sends PROMOTE_FROM_ENVIRONMENT and PROMOTE_FROM_VERSION(Build Id) variables to Jenkinsfile.
 - The Jenkinsfile needs to checkout the specified commit and trigger build for target environment.
@@ -41,7 +41,7 @@ The tutorial is for Ubuntu linux.
    
 2. Download Darumatic pipeline-stage-view plugin files. 
 
-   To download the latest release [2.11.103-SNAPSHOT](https://github.com/darumatic/pipeline-stage-view-plugin/releases/tag/2.11.103-SNAPSHOT)
+   To download the latest release [2.11.104-SNAPSHOT](https://github.com/darumatic/pipeline-stage-view-plugin/releases/tag/2.11.104-SNAPSHOT)
    
 3. Upload Darumatic pipeline-stage-view.jpi, pipeline-rest-api.jpi and pipeline-promote-api.jpi to Jenkins server.
    
