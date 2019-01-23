@@ -21,6 +21,21 @@ public class SCMWrapper {
         this.scm = scm;
     }
 
+    public String branch() {
+        try {
+            Field branchesField = ReflectUtil.field(scm.getClass(), "branches");
+            branchesField.setAccessible(true);
+            List branches = ((List) branchesField.get(scm));
+            if (!branches.isEmpty()) {
+                return branches.get(0).toString().replaceAll("\\*/", "");
+            }
+            return "";
+        } catch (Exception e) {
+            logger.error("failed to get relative directory", e);
+            return "";
+        }
+    }
+
     public Optional<String> relativeDirectory() {
         try {
             Field extensionsField = ReflectUtil.field(scm.getClass(), "extensions");
