@@ -26,10 +26,11 @@ public class PromoteSCMListener extends SCMListener {
 
     @Override
     public void onCheckout(Run<?, ?> build, SCM scm, FilePath workspace, TaskListener listener, @CheckForNull File changelogFile, @CheckForNull SCMRevisionState pollingBaseline) throws Exception {
-        if (isPromoteBuild(build)) {
+        ParametersAction parametersAction = build.getAction(ParametersAction.class);
+        if (parametersAction == null || isPromoteBuild(parametersAction)) {
             return;
         }
-        ParametersActionWrapper action = new ParametersActionWrapper(build.getAction(ParametersAction.class));
+        ParametersActionWrapper action = new ParametersActionWrapper(parametersAction);
         SCMWrapper scmWrapper = new SCMWrapper(scm);
         String name = scmWrapper.scmName();
         if (name != null) {
@@ -41,11 +42,7 @@ public class PromoteSCMListener extends SCMListener {
         }
     }
 
-    private boolean isPromoteBuild(Run build) {
-        ParametersAction action = build.getAction(ParametersAction.class);
-        if (action == null) {
-            return false;
-        }
+    private boolean isPromoteBuild(ParametersAction action) {
         ParameterValue value = action.getParameter(PromoteUtil.PROMOTE_FROM_ENVIRONMENT);
         return value != null;
     }
