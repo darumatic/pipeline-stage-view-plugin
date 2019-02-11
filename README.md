@@ -41,7 +41,7 @@ The tutorial is for Ubuntu linux.
    
 2. Download Darumatic pipeline-stage-view plugin files. 
 
-   To download the latest release [2.11.106-SNAPSHOT](https://github.com/darumatic/pipeline-stage-view-plugin/releases/tag/2.11.106-SNAPSHOT)
+   To download the latest release [2.11.107](https://github.com/darumatic/pipeline-stage-view-plugin/releases/tag/2.11.107)
    
 3. Upload Darumatic pipeline-stage-view.jpi, pipeline-rest-api.jpi and pipeline-promote-api.jpi to Jenkins server.
    
