@@ -27,9 +27,11 @@ import com.cloudbees.workflow.rest.endpoints.JobAPI;
 import com.cloudbees.workflow.rest.hal.Link;
 import com.cloudbees.workflow.rest.hal.Links;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.google.common.collect.Lists;
 import hudson.EnvVars;
 import hudson.model.Run;
 import hudson.scm.ChangeLogSet;
+import hudson.scm.RepositoryBrowser;
 import hudson.scm.SCM;
 import hudson.util.LogTaskListener;
 import hudson.util.RunList;
@@ -39,6 +41,7 @@ import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -143,7 +146,7 @@ public class JobExt {
             RunExt runExt = (fullStages) ? RunExt.create(run) : RunExt.create(run).createWrapper();
             runExt.setJobName(jobName(run));
             runExt.setChangeSet(lastChangeSet(runs, i));
-            runExt.setChangeSets(run.getChangeSets().stream().map(changeSet -> ChangeSetExt.create(changeSet, run)).collect(Collectors.toList()));
+            runExt.setChangeSets(getChangeSets(run).stream().map(changeSet -> ChangeSetExt.create(changeSet, run)).collect(Collectors.toList()));
             try {
                 EnvVars environment = run.getEnvironment(new LogTaskListener(null, Level.INFO));
                 runExt.setEnvironment(environment.get("ENVIRONMENT"));
@@ -281,10 +284,10 @@ public class JobExt {
             }
         }
 
-        List<ChangeLogSet<? extends ChangeLogSet.Entry>> changeSets = run.getChangeSets();
+        List<ChangeLogSet<? extends ChangeLogSet.Entry>> changeSets = getChangeSets(run);
         if (changeSets.isEmpty()) {
             for (int i = currentIndex + 1; i < runs.size(); i++) {
-                changeSets = runs.get(i).getChangeSets();
+                changeSets = getChangeSets(runs.get(i));
                 if (!changeSets.isEmpty()) {
                     ChangeLogSet<? extends ChangeLogSet.Entry> entries = changeSets.get(0);
                     return ChangeSetExt.create(entries, run);
@@ -293,6 +296,41 @@ public class JobExt {
             return null;
         } else {
             return ChangeSetExt.create(changeSets.get(0), run);
+        }
+    }
+
+    private static List<ChangeLogSet<? extends ChangeLogSet.Entry>> getChangeSets(WorkflowRun run) {
+        List<ChangeLogSet<? extends ChangeLogSet.Entry>> changeSets = run.getChangeSets();
+        List<ChangeLogSet<? extends ChangeLogSet.Entry>> filtered = Lists.newArrayList();
+        for (ChangeLogSet<? extends ChangeLogSet.Entry> changeSet : changeSets) {
+            if (!isExcluded(changeSet)) {
+                filtered.add(changeSet);
+            }
+        }
+        return filtered;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static boolean isExcluded(ChangeLogSet<? extends ChangeLogSet.Entry> changeLogSet) {
+        if (changeLogSet.isEmptySet()) {
+            return true;
+        }
+        RepositoryBrowser<ChangeLogSet.Entry> repoBrowser = (RepositoryBrowser<ChangeLogSet.Entry>) changeLogSet.getBrowser();
+        if (repoBrowser == null) {
+            return false;
+        }
+        try {
+            URL changeSetLink = repoBrowser.getChangeSetLink(changeLogSet.iterator().next());
+            if (changeSetLink == null) {
+                return false;
+            }
+            String url = changeSetLink.toString();
+            if (url == null) {
+                return false;
+            }
+            return url.contains("/jenkins-project-config") || url.contains("/k8s-scripts");
+        } catch (IOException e) {
+            return false;
         }
     }
 

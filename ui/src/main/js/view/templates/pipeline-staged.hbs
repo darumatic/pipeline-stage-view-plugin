@@ -54,7 +54,7 @@
                  </div>
                 {{/if}}
 
-                {{#if this.changeSet}}
+                {{#if this.changeSet.commits.length }}
                 <div class="changeset-box">
                     <div class="changeset-info">
                         <div class="changeset-total" href="javascript:void(0)">
@@ -62,12 +62,14 @@
                         {{#if this.changeSets.length}}
                              <ul class="changeset-details">
                                  {{#each this.changeSets}}
+                                 {{#if this.commits.length }}
                                  <li>
                                      <span class="changeset-author" title="{{this.commits.[0].authorJenkinsId}}">{{ellipsis this.commits.[0].authorJenkinsId 0 15}}</span>&nbsp;<a href="{{this.commits.[0].commitUrl}}"
                                                                                                                 target="_blank" title="{{this.commits.[0].commitId}}">{{substring this.commits.[0].commitId 0 7}}</a>
                                  <br>                                                                                <a class="changeset-description" title="{{this.commits.[0]
                                  .message}}">{{ellipsis this.commits.[0].message 0 30}}</a>
                                  </li>
+                                 {{/if}}
                                  {{/each}}
                              </ul>
                         {{/if}}
