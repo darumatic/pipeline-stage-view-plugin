@@ -6,13 +6,13 @@ import java.util.*;
  */
 public class InjectedTest extends junit.framework.TestCase {
   public static junit.framework.Test suite() throws Exception {
-    System.out.println("Running tests for "+"org.jenkins-ci.plugins.pipeline-stage-view:pipeline-stage-view:2.11.107");
+    System.out.println("Running tests for "+"org.jenkins-ci.plugins.pipeline-stage-view:pipeline-stage-view:2.204.2");
     Map<String, Object> parameters = new HashMap<String, Object>();
-    parameters.put("basedir","D:\\Workspace\\upwork\\darumatic\\pipeline-stage-view-plugin\\ui");
+    parameters.put("basedir","C:\\Users\\chi\\Workspace\\nsw\\pipeline-stage-view-plugin\\ui");
     parameters.put("artifactId","pipeline-stage-view");
     parameters.put("packaging","hpi");
-    parameters.put("outputDirectory","D:\\Workspace\\upwork\\darumatic\\pipeline-stage-view-plugin\\ui\\target\\classes");
-    parameters.put("testOutputDirectory","D:\\Workspace\\upwork\\darumatic\\pipeline-stage-view-plugin\\ui\\target\\test-classes");
+    parameters.put("outputDirectory","C:\\Users\\chi\\Workspace\\nsw\\pipeline-stage-view-plugin\\ui\\target\\classes");
+    parameters.put("testOutputDirectory","C:\\Users\\chi\\Workspace\\nsw\\pipeline-stage-view-plugin\\ui\\target\\test-classes");
     parameters.put("requirePI","true");
     return org.jvnet.hudson.test.PluginAutomaticTestBuilder.build(parameters);
   }
