@@ -27,7 +27,10 @@ import com.cloudbees.workflow.rest.endpoints.JobAPI;
 import com.cloudbees.workflow.rest.hal.Link;
 import com.cloudbees.workflow.rest.hal.Links;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.io.Files;
 import hudson.EnvVars;
 import hudson.model.Run;
 import hudson.scm.ChangeLogSet;
@@ -39,11 +42,13 @@ import org.jenkinsci.plugins.workflow.flow.FlowExecution;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -237,6 +242,26 @@ public class JobExt {
         }
     }
 
+    private static String url(SCM scm) {
+        try {
+            if (scm == null) {
+                return null;
+            }
+            Field userRemoteConfigsField = scm.getClass().getDeclaredField("userRemoteConfigs");
+            userRemoteConfigsField.setAccessible(true);
+            List<Object> userRemoteConfigs = (List<Object>) userRemoteConfigsField.get(scm);
+            if (!userRemoteConfigs.isEmpty()) {
+                Object userRemoteConfig = userRemoteConfigs.get(0);
+                Field urlField = userRemoteConfig.getClass().getDeclaredField("url");
+                urlField.setAccessible(true);
+                return (String) urlField.get(userRemoteConfig);
+            }
+            return null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     public static String branch(FlowExecution execution) {
         String script = script(execution);
         if (script == null) {
@@ -286,13 +311,13 @@ public class JobExt {
 
         List<ChangeLogSet<? extends ChangeLogSet.Entry>> changeSets = getChangeSets(run);
         if (changeSets.isEmpty()) {
-            for (int i = currentIndex + 1; i < runs.size(); i++) {
-                changeSets = getChangeSets(runs.get(i));
-                if (!changeSets.isEmpty()) {
-                    ChangeLogSet<? extends ChangeLogSet.Entry> entries = changeSets.get(0);
-                    return ChangeSetExt.create(entries, run);
-                }
-            }
+//            for (int i = currentIndex + 1; i < runs.size(); i++) {
+//                changeSets = getChangeSets(runs.get(i));
+//                if (!changeSets.isEmpty()) {
+//                    ChangeLogSet<? extends ChangeLogSet.Entry> entries = changeSets.get(0);
+//                    return ChangeSetExt.create(entries, run);
+//                }
+//            }
             return null;
         } else {
             return ChangeSetExt.create(changeSets.get(0), run);
@@ -302,36 +327,106 @@ public class JobExt {
     private static List<ChangeLogSet<? extends ChangeLogSet.Entry>> getChangeSets(WorkflowRun run) {
         List<ChangeLogSet<? extends ChangeLogSet.Entry>> changeSets = run.getChangeSets();
         List<ChangeLogSet<? extends ChangeLogSet.Entry>> filtered = Lists.newArrayList();
+        Map<String, String> commitSources = commitSources(run);
         for (ChangeLogSet<? extends ChangeLogSet.Entry> changeSet : changeSets) {
-            if (!isExcluded(changeSet)) {
+            if (!isExcluded(changeSet, commitSources)) {
                 filtered.add(changeSet);
             }
         }
         return filtered;
     }
 
+    private static String commitId(ChangeLogSet<? extends ChangeLogSet.Entry> changeLogSet) {
+        Object[] items = changeLogSet.getItems();
+        if (items == null || items.length == 0) {
+            return null;
+        }
+        Object item = items[0];
+        try {
+            Field idField = item.getClass().getDeclaredField("id");
+            idField.setAccessible(true);
+            Object id = idField.get(item);
+            if (id == null) {
+                return null;
+            }
+            return id.toString();
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+        }
+        return null;
+    }
+
     @SuppressWarnings("unchecked")
-    private static boolean isExcluded(ChangeLogSet<? extends ChangeLogSet.Entry> changeLogSet) {
+    private static boolean isExcluded(ChangeLogSet<? extends ChangeLogSet.Entry> changeLogSet, Map<String, String> commitSources) {
         if (changeLogSet.isEmptySet()) {
             return true;
         }
         RepositoryBrowser<ChangeLogSet.Entry> repoBrowser = (RepositoryBrowser<ChangeLogSet.Entry>) changeLogSet.getBrowser();
         if (repoBrowser == null) {
-            return false;
-        }
-        try {
-            URL changeSetLink = repoBrowser.getChangeSetLink(changeLogSet.iterator().next());
-            if (changeSetLink == null) {
-                return false;
-            }
-            String url = changeSetLink.toString();
+            String commitId = commitId(changeLogSet);
+            String url = commitSources.get(commitId);
             if (url == null) {
                 return false;
             }
             return url.contains("/jenkins-project-config") || url.contains("/k8s-scripts");
-        } catch (IOException e) {
-            return false;
+        } else {
+            try {
+                URL changeSetLink = repoBrowser.getChangeSetLink(changeLogSet.iterator().next());
+                if (changeSetLink == null) {
+                    return false;
+                }
+                String url = changeSetLink.toString();
+                if (url == null) {
+                    return false;
+                }
+                return url.contains("/jenkins-project-config") || url.contains("/k8s-scripts");
+            } catch (IOException e) {
+                return false;
+            }
         }
+    }
+
+    private static Map<String, String> commitSources(WorkflowRun run) {
+        Map<String, String> commitSources = Maps.newHashMap();
+        try {
+            Field checkoutsFields = run.getClass().getDeclaredField("checkouts");
+            checkoutsFields.setAccessible(true);
+            List<Object> checkoutList = (List<Object>) checkoutsFields.get(run);
+            if (!checkoutList.isEmpty()) {
+                Object checkout = checkoutList.get(0);
+                Field scmField = checkout.getClass().getDeclaredField("scm");
+                scmField.setAccessible(true);
+                SCM scm = (SCM) scmField.get(checkout);
+                String url = url(scm);
+
+                Field changelogFileField = checkout.getClass().getDeclaredField("changelogFile");
+                changelogFileField.setAccessible(true);
+                Object file = changelogFileField.get(checkout);
+                List<String> commits = readCommitLogfile(file);
+
+                for (String commit : commits) {
+                    commitSources.put(commit, url);
+                }
+            }
+        } catch (Exception e) {
+        }
+        return commitSources;
+    }
+
+    private static List<String> readCommitLogfile(Object file) {
+        List<String> commits = Lists.newArrayList();
+        if (file instanceof File) {
+            try {
+                List<String> lines = Files.readLines((File) file, Charsets.UTF_8);
+                for (String line : lines) {
+                    if (line.startsWith("commit ")) {
+                        commits.add(line.substring("commit ".length()).trim());
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        return commits;
     }
 
     private static int promotedVersion(WorkflowRun run) {
