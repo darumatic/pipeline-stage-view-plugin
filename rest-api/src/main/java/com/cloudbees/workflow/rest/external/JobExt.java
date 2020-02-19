@@ -311,13 +311,16 @@ public class JobExt {
 
         List<ChangeLogSet<? extends ChangeLogSet.Entry>> changeSets = getChangeSets(run);
         if (changeSets.isEmpty()) {
-//            for (int i = currentIndex + 1; i < runs.size(); i++) {
-//                changeSets = getChangeSets(runs.get(i));
-//                if (!changeSets.isEmpty()) {
-//                    ChangeLogSet<? extends ChangeLogSet.Entry> entries = changeSets.get(0);
-//                    return ChangeSetExt.create(entries, run);
-//                }
-//            }
+            if (run.isBuilding()) {
+                return null;
+            }
+            for (int i = currentIndex + 1; i < runs.size(); i++) {
+                changeSets = getChangeSets(runs.get(i));
+                if (!changeSets.isEmpty()) {
+                    ChangeLogSet<? extends ChangeLogSet.Entry> entries = changeSets.get(0);
+                    return ChangeSetExt.create(entries, run);
+                }
+            }
             return null;
         } else {
             return ChangeSetExt.create(changeSets.get(0), run);
