@@ -58,38 +58,46 @@
                 <div class="changeset-box">
                     <div class="changeset-info">
                         <div class="changeset-total" href="javascript:void(0)">
-                        [{{this.branch}}{{#if this.branch}}:{{/if}}{{this.changeSets.length}}]
+                        [{{this.branch}}{{#if this.branch}}:{{/if}}{{count this.changeSets}}]
                         {{#if this.changeSets.length}}
                              <ul class="changeset-details">
                                  {{#each this.changeSets}}
                                  {{#if this.commits.length }}
+                                 {{#each this.commits}}
                                  <li>
-                                     <span class="changeset-author" title="{{this.commits.[0].authorJenkinsId}}">{{ellipsis this.commits.[0].authorJenkinsId 0 15}}</span>&nbsp;<a href="{{this.commits.[0].commitUrl}}"
-                                                                                                                target="_blank" title="{{this.commits.[0].commitId}}">{{substring this.commits.[0].commitId 0 7}}</a>
-                                 <br>                                                                                <a class="changeset-description" title="{{this.commits.[0]
-                                 .message}}">{{ellipsis this.commits.[0].message 0 30}}</a>
+                                     <span class="changeset-author" title="{{this.authorJenkinsId}}">{{ellipsis this.authorJenkinsId 0 15}}</span>&nbsp;<a href="{{this.commitUrl}}"
+                                                                                                                target="_blank" title="{{this.commitId}}">{{substring this.commitId 0 7}}</a>
+                                 <br>                                                                                <a class="changeset-description" title="{{this.message}}">{{ellipsis this.message 0 30}}</a>
                                  </li>
+                                 {{/each}}
                                  {{/if}}
                                  {{/each}}
                              </ul>
                         {{/if}}
                         </div>
 
-                        <span class="changeset-author" title="{{this.changeSet.commits.[0].authorJenkinsId}}">{{ellipsis this.changeSet.commits.[0].authorJenkinsId  0 15}}</span>&nbsp;<a href="{{this.changeSet.commits.[0].commitUrl}}"
-                        target="_blank" title="{{this
-                                                                         .changeSet
-                                                                         .commits.[0]
-                                                                         .commitId}}">{{substring this
-                        .changeSet
-                        .commits.[0]
-                        .commitId 0 7}}</a>
+                        {{#each this.changeSet.commits}}
+                        {{#if @last }}
+                        <span class="changeset-author" title="{{this.authorJenkinsId}}">{{ellipsis this.authorJenkinsId  0 15}}</span>&nbsp;<a href="{{this.commitUrl}}"
+                        target="_blank" title="{{this.commitId}}">{{substring this.commitId 0 7}}</a>
+                        {{/if}}
+                        {{/each}}
                     </div>
-                    <a class="changeset-description" title="{{this.changeSet.commits.[0].message}}">{{ellipsis this.changeSet.commits.[0].message 0 30}}</a>
-                    <div class="changeset-timestamp">{{formatDate this.changeSet.commits.[0].timestamp 'MM/DD h:mm:ss a'}} </div>
-
+                    {{#each this.changeSet.commits}}
+                    {{#if @last }}
+                    <a class="changeset-description" title="{{this.message}}">{{ellipsis this.message 0 30}}</a>
+                    <div class="changeset-timestamp">{{formatDate this.timestamp 'MM/DD h:mm:ss a'}} </div>
+                    {{/if}}
+                    {{/each}}
                 </div>
                 {{else}}
-                <div class="changeset-box no-changes">No Commits</div>
+                <div class="changeset-box no-changes">
+                {{#if (eq this.status "IN_PROGRESS" "NOT_EXECUTED") }}
+                Detecting...
+               {{else}}
+                No Commits
+                {{/if }}
+                </div>
                 {{/if}}
 
                 {{#ifCond this.status '==' 'SUCCESS'}}

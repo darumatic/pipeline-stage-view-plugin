@@ -45,39 +45,50 @@
 
   .table-box {
     padding: 0 0 0 20em;
+
     .cell-color {
       padding: 1px;
       position: relative;
     }
+
     col:nth-child(even) {
       background: rgba(0, 0, 0, .03)
     }
+
     td.NOT_EXECUTED .cell-color {
       display: none;
     }
+
     td.SUCCESS .cell-color {
       background: rgba(0, 255, 0, .1)
     }
+
     td.UNSTABLE .cell-color {
       background: rgba(230, 230, 9, .2)
     }
+
     tr.UNSTABLE .cell-color {
       background: rgba(230, 230, 9, .2)
     }
+
     tr.FAILED .cell-color {
       background: rgba(255, 50, 0, .1)
     }
+
     tr.FAILED .FAILED .duration {
       background: repeating-linear-gradient(-45deg, rgba(255, 50, 0, .1), rgba(255, 50, 0, .1) 20px, rgba(255, 000, 0, .15) 20px, rgba(255, 000, 0, .15) 40px);
       box-shadow: 0 0 0 1px;
+
       span {
         opacity: 1 !important;
       }
 
     }
+
     tr.job td {
       height: 6em;
     }
+
     tr {
       td.totalComplete .progress {
         margin: 2px 5px;
@@ -85,24 +96,29 @@
         height: 15px;
         background: rgba(0, 0, 0, .1);
         box-shadow: inset 0 5px 10px rgba(0, 0, 0, .33);
+
         .time-remaining {
           .run-timing;
           left: 10px;
         }
       }
+
       td.hide-cell {
         border: none;
         padding: 0;
         width: 0;
         font-size: 0;
       }
+
       td {
         border: 1px solid rgba(0, 0, 0, .05);
         text-shadow: #fff 0 1px 1px, #fff 0 1px 2px;
         padding: 0;
+
         .cell-color {
           min-height: 5.8em;
         }
+
         .duration {
           position: absolute;
           white-space: nowrap;
@@ -119,43 +135,53 @@
         }
       }
     }
+
     tr.header th {
       border: 1px solid rgba(0, 0, 0, .025);
       border-bottom: 2px solid rgba(0, 0, 0, .1);
       padding: 1em;
     }
+
     tr.header th.stage-start {
       border: none;
     }
 
     tr:nth-of-type(4n+3), tr.in-progress-run {
       background: rgba(0, 0, 0, .05);
+
       .stage-start .cell-box {
         background: rgba(0, 0, 0, .05);
         box-shadow: inset 0 50px 50px -50px rgba(0, 0, 0, .025);
+        min-height: 100%;
       }
 
     }
+
     .table-viewPort {
       display: inline-block;
       border: 1px solid #ccc;
       overflow-x: auto;
       overflow-y: hidden;
       box-shadow: rgba(0, 0, 0, .25) 1px 3px 5px;
+
       table {
         border-spacing: 0
       }
+
       tr.totals {
         .cell-color {
           box-shadow: rgba(0, 0, 0, 0.25) 0 -10px 10px -10px inset;
           background: rgba(0, 0, 0, .05);
           padding: 1.33em .5em 0;
           min-height: 3.5em;
+
           .duration {
           }
         }
+
         .stage-start {
           border: none;
+
           .cell-color {
             text-align: right;
             padding: .33em 1em;
@@ -186,6 +212,7 @@
         border-left: 1px solid rgba(0, 0, 0, .1);
         //overflow: hidden;
         margin: -1px 0 0;
+
         .changeset-environment {
           position: absolute;
           top: 0;
@@ -194,9 +221,11 @@
           background: #89AED1;
           border-radius: 2px;
         }
+
         .cell-color {
           padding: 0;
         }
+
         .cell-box {
           display: block;
           text-align: center;
@@ -204,6 +233,8 @@
           font-size: 11px;
           padding: .5em 0;
           width: 100%;
+          min-height: 100%;
+          position: absolute;
           //overflow: hidden;
 
           .stage-end-icons {
@@ -221,6 +252,7 @@
               color: #204A87;
             }
           }
+
           .stage-start-box {
             clear: both;
             text-align: left;
@@ -228,6 +260,7 @@
             position: relative;
             margin-left: 55px;
           }
+
           .stage-environment {
             text-shadow: none;
             position: absolute;
@@ -242,9 +275,11 @@
             margin-right: 5px;
             color: #FFF;
           }
+
           .stage-environment-from {
 
           }
+
           .promote {
             display: none;
             position: absolute;
@@ -252,6 +287,7 @@
             right: 5px;
             text-shadow: none;
           }
+
           .promote-btn {
             background-color: #4b758b;
             color: #eee;
@@ -260,18 +296,22 @@
             font-size: 1em;
             line-height: 1.5em;
           }
+
           .promote-btn:after {
             content: '▾';
             position: absolute;
             top: 0;
             right: 3px;
           }
+
           .promote.active .promote-btn:after {
             content: '▴';
           }
+
           .promote.active .promote-dropdown { /* display tooltip on hover */
             display: block;
           }
+
           .promote-dropdown {
             top: 2em;
             background-color: #FFF;
@@ -291,11 +331,13 @@
             padding: 10px 10px 10px 20px;
             list-style: square;
           }
+
           .promote-dropdown p {
             margin-top: 0;
             color: #777;
             font-size: 1em;
           }
+
           .promote-submit {
             margin-top: 20px;
             background-color: #4b758b;
@@ -304,10 +346,12 @@
             font-size: 12px;
             padding: 3px 20px;
           }
+
           .promote-env {
             line-height: 1em;
             vertical-align: top;
           }
+
           .stage-start-time {
             border-radius: 0;
             float: none;
@@ -317,13 +361,16 @@
             border: none;
             color: #999;
           }
+
           .changeset-total {
             position: relative;
             display: inline-block;
           }
+
           .changeset-total:hover .changeset-details { /* display tooltip on hover */
             display: block;
           }
+
           .changeset-details {
             top: 1.5em;
             background-color: #FFF;
@@ -343,6 +390,7 @@
             padding: 10px 10px 10px 20px;
             list-style: square;
           }
+
           .jobName {
             position: absolute;
             top: .68em;
@@ -419,6 +467,7 @@
     .cell-color {
       background: rgba(0, 0, 0, .1)
     }
+
     .stage-wrapper {
 
     }
@@ -453,6 +502,7 @@
     .date, .time {
       padding: 3px 5px;
     }
+
     .date {
       background-color: #f0f0f0;
     }
@@ -493,6 +543,7 @@
         right: 1px;
         font-size: 0.75em;
       }
+
       .exec-node {
         text-shadow: none;
         position: absolute;
@@ -524,12 +575,15 @@
     font-size: 11px;
     text-shadow: rgba(0, 0, 0, .5) 0 -1px 1px;
   }
+
   .jobName .badge a {
     color: inherit;
   }
+
   .UNSTABLE .jobName .badge {
     background-color: #E2E203;
   }
+
   .FAILED .jobName .badge {
     background-color: @error-highlight;
   }
@@ -537,27 +591,33 @@
   .stage-cell.PENDING_START .stage-wrapper {
     border: none;
   }
+
   .stage-cell.FAILED .stage-wrapper {
     color: @error-highlight;
     box-shadow: 0 1px 2px;
     text-shadow: 0 1px 1px #fff;
     font-weight: bold;
+
     .status {
       color: @error-highlight;
     }
   }
+
   .stage-cell.PAUSED_PENDING_INPUT .stage-wrapper {
     .status {
       color: #376fff;
     }
+
     border: dashed 1px;
   }
+
   .stage-cell.IN_PROGRESS, .stage-cell.PAUSED_PENDING_INPUT {
     .stage-wrapper {
       background-position: top right;
       background-size: 16px 16px;
     }
   }
+
   .stage-cell {
     .progress {
       position: absolute;
@@ -579,6 +639,7 @@
   .stage-end-icons .icon-label {
     display: none;
   }
+
   .stage-end-icons:hover .icon-label {
     display: inline-block;
   }

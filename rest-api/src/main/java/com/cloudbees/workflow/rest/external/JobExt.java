@@ -41,6 +41,8 @@ import hudson.util.RunList;
 import org.jenkinsci.plugins.workflow.flow.FlowExecution;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,6 +51,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -58,6 +61,8 @@ import java.util.stream.Collectors;
  * @author <a href="mailto:tom.fennelly@gmail.com">tom.fennelly@gmail.com</a>
  */
 public class JobExt {
+    private static final Logger LOGGER = LoggerFactory.getLogger(JobExt.class);
+
     /**
      * Max number of runs per page. Pagination not yet supported.
      */
@@ -298,33 +303,71 @@ public class JobExt {
     }
 
     private static ChangeSetExt lastChangeSet(List<WorkflowRun> runs, int currentIndex) {
-        WorkflowRun run = runs.get(currentIndex);
-        if (isPromotedVersion(run)) {
-            int version = promotedVersion(run);
-            for (int i = 0; i < runs.size(); i++) {
-                WorkflowRun workflowRun = runs.get(i);
-                if (workflowRun.getNumber() == version) {
-                    return lastChangeSet(runs, i);
+        try {
+            WorkflowRun run = runs.get(currentIndex);
+            if (isPromotedVersion(run)) {
+                int version = promotedVersion(run);
+                for (int i = 0; i < runs.size(); i++) {
+                    WorkflowRun workflowRun = runs.get(i);
+                    if (workflowRun.getNumber() == version) {
+                        return lastChangeSet(runs, i);
+                    }
                 }
             }
-        }
 
-        List<ChangeLogSet<? extends ChangeLogSet.Entry>> changeSets = getChangeSets(run);
-        if (changeSets.isEmpty()) {
-            if (run.isBuilding()) {
+            EnvVars vars = run.getEnvironment(new LogTaskListener(null, Level.INFO));
+            String env = vars.get("ENVIRONMENT");
+            List<ChangeLogSet<? extends ChangeLogSet.Entry>> changeSets = getChangeSets(run);
+            if (changeSets.isEmpty()) {
+                if (run.isBuilding()) {
+                    return null;
+                }
+                for (int i = currentIndex + 1; i < runs.size(); i++) {
+                    WorkflowRun previousRun = runs.get(i);
+                    EnvVars previousVars = previousRun.getEnvironment(new LogTaskListener(null, Level.INFO));
+                    String previousEnv = previousVars.get("ENVIRONMENT");
+                    if (Objects.equals(env, previousEnv) && !changeSets.isEmpty()) {
+                        ChangeLogSet<? extends ChangeLogSet.Entry> entries = lastChangeSet(changeSets);
+                        return ChangeSetExt.create(entries, run);
+                    }
+                }
                 return null;
+            } else {
+                return ChangeSetExt.create(lastChangeSet(changeSets), run);
             }
-            for (int i = currentIndex + 1; i < runs.size(); i++) {
-                changeSets = getChangeSets(runs.get(i));
-                if (!changeSets.isEmpty()) {
-                    ChangeLogSet<? extends ChangeLogSet.Entry> entries = changeSets.get(0);
-                    return ChangeSetExt.create(entries, run);
+        } catch (Exception e) {
+            LOGGER.error("failed to get last change set", e);
+            return null;
+        }
+    }
+
+    private static ChangeLogSet<? extends ChangeLogSet.Entry> lastChangeSet(List<ChangeLogSet<? extends ChangeLogSet.Entry>> changeSets) {
+        ChangeLogSet<? extends ChangeLogSet.Entry> latestChangeSet = null;
+        String latestChangeSetCommitterTime = null;
+        for (ChangeLogSet<? extends ChangeLogSet.Entry> changeSet : changeSets) {
+            Object[] items = changeSet.getItems();
+            if (items.length > 0) {
+                Object item = items[items.length - 1];
+                try {
+                    Field committerTimeField = item.getClass().getDeclaredField("committerTime");
+                    committerTimeField.setAccessible(true);
+                    String committerTime = (String) committerTimeField.get(item);
+                    if (latestChangeSetCommitterTime == null) {
+                        latestChangeSetCommitterTime = committerTime;
+                        latestChangeSet = changeSet;
+                    } else if (latestChangeSetCommitterTime.compareTo(committerTime) < 0) {
+                        latestChangeSetCommitterTime = committerTime;
+                        latestChangeSet = changeSet;
+                    }
+                } catch (Exception e) {
+                    LOGGER.error("failed to get commit time", e);
                 }
             }
-            return null;
-        } else {
-            return ChangeSetExt.create(changeSets.get(0), run);
         }
+        if (latestChangeSet == null) {
+            latestChangeSet = changeSets.get(0);
+        }
+        return latestChangeSet;
     }
 
     private static List<ChangeLogSet<? extends ChangeLogSet.Entry>> getChangeSets(WorkflowRun run) {
