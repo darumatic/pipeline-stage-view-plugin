@@ -189,7 +189,17 @@ public class ChangeSetExt {
             commit.setCommitId(entry.getCommitId());
             commit.setCommitUrl(repoUrl);
             commit.setMessage(entry.getMsg());
+
             commit.setAuthorJenkinsId(resolveCommitAuthors() ? entry.getAuthor().getFullName() : "");
+            if (commit.getAuthorJenkinsId() == null || commit.getAuthorJenkinsId().isEmpty()) {
+                String committer = committer(entry);
+                if (committer == null || committer.isEmpty()) {
+                    committer = author(entry);
+                }
+                if (committer != null && !committer.isEmpty()) {
+                    commit.setAuthorJenkinsId(committer);
+                }
+            }
             commit.setTimestamp(entry.getTimestamp());
 
             if (commit.getTimestamp() > -1) {
@@ -203,6 +213,26 @@ public class ChangeSetExt {
         }
 
         setCommitCount(getCommits().size());
+    }
+
+    private static String committer(ChangeLogSet.Entry entry) {
+        try {
+            Field committerField = entry.getClass().getDeclaredField("committer");
+            committerField.setAccessible(true);
+            return (String) committerField.get(entry);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static String author(ChangeLogSet.Entry entry) {
+        try {
+            Field authorField = entry.getClass().getDeclaredField("author");
+            authorField.setAccessible(true);
+            return (String) authorField.get(entry);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private RepositoryBrowser repositoryBrowser(WorkflowRun run) {

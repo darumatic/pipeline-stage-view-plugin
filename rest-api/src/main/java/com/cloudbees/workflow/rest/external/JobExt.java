@@ -38,7 +38,6 @@ import hudson.scm.RepositoryBrowser;
 import hudson.scm.SCM;
 import hudson.util.LogTaskListener;
 import hudson.util.RunList;
-import org.jenkinsci.plugins.workflow.flow.FlowExecution;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.slf4j.Logger;
@@ -53,8 +52,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Level;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -155,8 +152,16 @@ public class JobExt {
             WorkflowRun run = runs.get(i);
             RunExt runExt = (fullStages) ? RunExt.create(run) : RunExt.create(run).createWrapper();
             runExt.setJobName(jobName(run));
-            runExt.setChangeSet(lastChangeSet(runs, i));
-            runExt.setChangeSets(getChangeSets(run).stream().map(changeSet -> ChangeSetExt.create(changeSet, run)).collect(Collectors.toList()));
+
+
+            ChangeLogSet<? extends ChangeLogSet.Entry> lastChangeLogSet = lastChangeSet(runs, i);
+            ChangeSetExt lastChangeSet = lastChangeLogSet == null ? null : ChangeSetExt.create(lastChangeLogSet, (WorkflowRun) lastChangeLogSet.getRun());
+            runExt.setChangeSet(lastChangeSet);
+            if (lastChangeLogSet != null) {
+                runExt.setChangeSets(getChangeSets((WorkflowRun) lastChangeLogSet.getRun()).stream().map(changeSet -> ChangeSetExt.create(changeSet, run)).collect(Collectors.toList()));
+            } else {
+                runExt.setChangeSets(new ArrayList<>());
+            }
             try {
                 EnvVars environment = run.getEnvironment(new LogTaskListener(null, Level.INFO));
                 runExt.setEnvironment(environment.get("ENVIRONMENT"));
@@ -165,27 +170,25 @@ public class JobExt {
             } catch (IOException | InterruptedException e) {
             }
 
-            String branch = branch(scm(run));
-            if (branch == null) {
-                branch = branch(run.getExecution());
-            }
-            if (branch != null) {
-                if (branch.startsWith("$")) {
-                    branch = branch.substring(1);
-                    if (branch.startsWith("{") && branch.endsWith("}")) {
-                        branch = branch.substring(1, branch.length() - 1);
+            if (lastChangeLogSet == null) {
+                List<SCM> scms = scms(run);
+                if (!scms.isEmpty()) {
+                    runExt.setBranch(branch(scms.get(0)).replaceAll("\\*/", ""));
+                }
+            } else {
+                Map<String, String> commitSources = commitSources((WorkflowRun) lastChangeLogSet.getRun());
+                ChangeSetExt.Commit lastCommit = lastChangeSet.getCommits().get(0);
+                String commitURL = commitSources.get(lastCommit.getCommitId());
+
+                List<SCM> scms = scms((WorkflowRun) lastChangeLogSet.getRun());
+                for (SCM scm : scms) {
+                    String scmURL = url(scm);
+                    if (Objects.equals(commitURL, scmURL)) {
+                        runExt.setBranch(branch(scm).replaceAll("\\*/", ""));
+                        break;
                     }
-                    try {
-                        EnvVars environment = run.getEnvironment(new LogTaskListener(null, Level.INFO));
-                        branch = environment.get(branch);
-                    } catch (Exception e) {
-                        branch = null;
-                    }
-                } else {
-                    branch = branch.replaceAll("\\*/", "");
                 }
             }
-            runExt.setBranch(branch);
 
             runsExt.add(runExt);
             if (since != null && runExt.getName().equals(since)) {
@@ -210,18 +213,23 @@ public class JobExt {
         }
     }
 
-    private static SCM scm(WorkflowRun run) {
+    private static List<SCM> scms(WorkflowRun run) {
         try {
             Field checkoutsFields = run.getClass().getDeclaredField("checkouts");
             checkoutsFields.setAccessible(true);
             List<Object> checkoutList = (List<Object>) checkoutsFields.get(run);
-            if (!checkoutList.isEmpty()) {
-                Object checkout = checkoutList.get(0);
+            List<SCM> scms = new ArrayList<>();
+
+            for (Object checkout : checkoutList) {
                 Field scmField = checkout.getClass().getDeclaredField("scm");
                 scmField.setAccessible(true);
-                return (SCM) scmField.get(checkout);
+                SCM scm = (SCM) scmField.get(checkout);
+                String url = url(scm);
+                if (url != null && !isCMSExcluded(url)) {
+                    scms.add(scm);
+                }
             }
-            return null;
+            return scms;
         } catch (Exception e) {
             return null;
         }
@@ -267,42 +275,7 @@ public class JobExt {
         }
     }
 
-    public static String branch(FlowExecution execution) {
-        String script = script(execution);
-        if (script == null) {
-            return null;
-        }
-        int start = script.indexOf("branches:");
-        if (start > 0) {
-            start = script.indexOf("[[", start);
-
-            if (start > 0) {
-                int end = script.indexOf("]]", start);
-                if (end > start) {
-                    String branches = script.substring(start + 2, end);
-                    Pattern pattern = Pattern.compile("[^\']+\'(.*)\'.*");
-
-                    Matcher matcher = pattern.matcher(branches);
-                    if (matcher.matches()) {
-                        return matcher.group(1);
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
-    private static String script(FlowExecution execution) {
-        try {
-            Field scriptField = execution.getClass().getDeclaredField("script");
-            scriptField.setAccessible(true);
-            return (String) scriptField.get(execution);
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private static ChangeSetExt lastChangeSet(List<WorkflowRun> runs, int currentIndex) {
+    private static ChangeLogSet<? extends ChangeLogSet.Entry> lastChangeSet(List<WorkflowRun> runs, int currentIndex) {
         try {
             WorkflowRun run = runs.get(currentIndex);
             if (isPromotedVersion(run)) {
@@ -327,13 +300,12 @@ public class JobExt {
                     EnvVars previousVars = previousRun.getEnvironment(new LogTaskListener(null, Level.INFO));
                     String previousEnv = previousVars.get("ENVIRONMENT");
                     if (Objects.equals(env, previousEnv) && !changeSets.isEmpty()) {
-                        ChangeLogSet<? extends ChangeLogSet.Entry> entries = lastChangeSet(changeSets);
-                        return ChangeSetExt.create(entries, run);
+                        return lastChangeSet(changeSets);
                     }
                 }
                 return null;
             } else {
-                return ChangeSetExt.create(lastChangeSet(changeSets), run);
+                return lastChangeSet(changeSets);
             }
         } catch (Exception e) {
             LOGGER.error("failed to get last change set", e);
@@ -413,7 +385,7 @@ public class JobExt {
             if (url == null) {
                 return false;
             }
-            return url.contains("/jenkins-project-config") || url.contains("/k8s-scripts");
+            return isCMSExcluded(url);
         } else {
             try {
                 URL changeSetLink = repoBrowser.getChangeSetLink(changeLogSet.iterator().next());
@@ -424,11 +396,18 @@ public class JobExt {
                 if (url == null) {
                     return false;
                 }
-                return url.contains("/jenkins-project-config") || url.contains("/k8s-scripts");
+                return isCMSExcluded(url);
             } catch (IOException e) {
                 return false;
             }
         }
+    }
+
+    private static boolean isCMSExcluded(String url) {
+        if (url == null) {
+            return true;
+        }
+        return url.contains("/jenkins-project-config") || url.contains("/k8s-scripts");
     }
 
     private static Map<String, String> commitSources(WorkflowRun run) {
@@ -437,8 +416,7 @@ public class JobExt {
             Field checkoutsFields = run.getClass().getDeclaredField("checkouts");
             checkoutsFields.setAccessible(true);
             List<Object> checkoutList = (List<Object>) checkoutsFields.get(run);
-            if (!checkoutList.isEmpty()) {
-                Object checkout = checkoutList.get(0);
+            for (Object checkout : checkoutList) {
                 Field scmField = checkout.getClass().getDeclaredField("scm");
                 scmField.setAccessible(true);
                 SCM scm = (SCM) scmField.get(checkout);

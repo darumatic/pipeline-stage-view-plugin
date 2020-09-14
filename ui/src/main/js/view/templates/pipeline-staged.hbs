@@ -58,7 +58,7 @@
                 <div class="changeset-box">
                     <div class="changeset-info">
                         <div class="changeset-total" href="javascript:void(0)">
-                        [{{this.branch}}{{#if this.branch}}:{{/if}}{{count this.changeSets}}]
+                        {{#if this.branch}}<span class="changeset-branch">{{this.branch}}</span>({{count this.changeSets}}):{{/if}}
                         {{#if this.changeSets.length}}
                              <ul class="changeset-details">
                                  {{#each this.changeSets}}
@@ -93,9 +93,13 @@
                 {{else}}
                 <div class="changeset-box no-changes">
                 {{#if (eq this.status "IN_PROGRESS" "NOT_EXECUTED") }}
+                {{#if (eq this.status "IN_PROGRESS") }}
                 Detecting...
+                {{/if}}
+                {{#if (eq this.status "NOT_EXECUTED") }}
+                {{/if}}
                {{else}}
-                {{this.branch}}:No Commits
+                <span class="changeset-branch">{{this.branch}}</span>:No commits
                 {{/if }}
                 </div>
                 {{/if}}
