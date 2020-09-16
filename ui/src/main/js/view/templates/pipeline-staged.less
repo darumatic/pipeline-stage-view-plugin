@@ -44,8 +44,6 @@
   }
 
   .table-box {
-    padding: 0 0 0 20em;
-
     .cell-color {
       padding: 1px;
       position: relative;
@@ -204,11 +202,10 @@
       }
 
       .stage-start {
-        position: absolute;
-        left: 0px;
         text-align: center;
         border-top: 1px solid rgba(0, 0, 0, .1);
-        width: 20em;
+        min-width: 20em;
+        max-width: 20em;
         border-left: 1px solid rgba(0, 0, 0, .1);
         //overflow: hidden;
         margin: -1px 0 0;
@@ -454,6 +451,8 @@
 }
 
 .jobsTable {
+  max-width: 90em !important;
+
   .header td {
     text-align: center;
     font-weight: bold;
@@ -590,6 +589,10 @@
 
   .FAILED .jobName .badge {
     background-color: @error-highlight;
+  }
+
+  .ABORTED .jobName .badge {
+    background-color: #888;
   }
 
   .stage-cell.PENDING_START .stage-wrapper {
