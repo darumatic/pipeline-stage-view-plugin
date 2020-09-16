@@ -173,7 +173,7 @@ public class JobExt {
             if (lastChangeLogSet == null) {
                 List<SCM> scms = scms(run);
                 if (!scms.isEmpty()) {
-                    runExt.setBranch(branch(scms.get(0)).replaceAll("\\*/", ""));
+                    runExt.setBranch(branch(scms.get(0), run).replaceAll("\\*/", ""));
                 }
             } else {
                 Map<String, String> commitSources = commitSources((WorkflowRun) lastChangeLogSet.getRun());
@@ -184,7 +184,7 @@ public class JobExt {
                 for (SCM scm : scms) {
                     String scmURL = url(scm);
                     if (Objects.equals(commitURL, scmURL)) {
-                        runExt.setBranch(branch(scm).replaceAll("\\*/", ""));
+                        runExt.setBranch(branch(scm, run).replaceAll("\\*/", ""));
                         break;
                     }
                 }
@@ -235,11 +235,13 @@ public class JobExt {
         }
     }
 
-    private static String branch(SCM scm) {
+    private static String branch(SCM scm, WorkflowRun run) {
         try {
             if (scm == null) {
                 return null;
             }
+
+            String branch = null;
             Field branchesField = scm.getClass().getDeclaredField("branches");
             branchesField.setAccessible(true);
             List<Object> configs = (List<Object>) branchesField.get(scm);
@@ -247,9 +249,27 @@ public class JobExt {
                 Object branchSpec = configs.get(0);
                 Field nameField = branchSpec.getClass().getDeclaredField("name");
                 nameField.setAccessible(true);
-                return (String) nameField.get(branchSpec);
+                branch = (String) nameField.get(branchSpec);
             }
-            return null;
+
+            if (branch != null && branch.startsWith("$")) {
+                branch = branch.substring(1);
+                if (branch.startsWith("{") && branch.endsWith("}")) {
+                    branch = branch.substring(1, branch.length() - 1);
+                }
+                try {
+                    EnvVars environment = run.getEnvironment(new LogTaskListener(null, Level.INFO));
+                    branch = environment.get(branch);
+                } catch (Exception e) {
+                    branch = null;
+                }
+            }
+
+            if (branch != null) {
+                branch = branch.replaceAll("\\*/", "");
+            }
+
+            return branch;
         } catch (Exception e) {
             return null;
         }
