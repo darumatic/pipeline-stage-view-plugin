@@ -58,14 +58,14 @@
                 <div class="changeset-box">
                     <div class="changeset-info">
                         <div class="changeset-total" href="javascript:void(0)">
-                        {{#if this.branch}}<span class="changeset-branch">{{this.branch}}</span>({{count this.changeSets}}):{{/if}}
+                        {{#if this.branch}}<span class="changeset-branch">{{ellipsis this.branch 0 13}}</span>({{count this.changeSets}}):{{/if}}
                         {{#if this.changeSets.length}}
                              <ul class="changeset-details">
                                  {{#each this.changeSets}}
                                  {{#if this.commits.length }}
                                  {{#each this.commits}}
                                  <li>
-                                     <span class="changeset-author" title="{{this.authorJenkinsId}}">{{ellipsis this.authorJenkinsId 0 10}}</span>&nbsp;<a href="{{this.commitUrl}}"
+                                     <span class="changeset-author" title="{{this.authorJenkinsId}}">{{ellipsis this.authorJenkinsId 0 7}}</span>&nbsp;<a href="{{this.commitUrl}}"
                                                                                                                 target="_blank" title="{{this.commitId}}">{{substring this.commitId 0 7}}</a>
                                  <br>                                                                                <a class="changeset-description" title="{{this.message}}">{{ellipsis this.message 0 30}}</a>
                                  </li>

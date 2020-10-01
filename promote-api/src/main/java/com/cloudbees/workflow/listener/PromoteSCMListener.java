@@ -30,14 +30,18 @@ public class PromoteSCMListener extends SCMListener {
         if (parametersAction == null || isPromoteBuild(parametersAction)) {
             return;
         }
-        ParametersActionWrapper action = new ParametersActionWrapper(parametersAction);
+        ParametersActionWrapper wrapper = new ParametersActionWrapper(parametersAction);
+        if (wrapper.hasParameter("GIT_BRANCH") && !wrapper.hasParameter("PARAM_GIT_BRANCH")) {
+            ParameterValue gitBranch = wrapper.getParameter("GIT_BRANCH");
+            wrapper.addParameter(new StringParameterValue("PARAM_GIT_BRANCH", String.valueOf(gitBranch.getValue())));
+        }
         SCMWrapper scmWrapper = new SCMWrapper(scm);
         String name = scmWrapper.scmName();
         if (name != null) {
             String key = name.toUpperCase() + "_BRANCH";
-            if (!action.hasParameter(key)) {
+            if (!wrapper.hasParameter(key)) {
                 logger.info("{}={}", key, scmWrapper.branch());
-                action.addParameter(new StringParameterValue(key, scmWrapper.branch()));
+                wrapper.addParameter(new StringParameterValue(key, scmWrapper.branch()));
             }
         }
     }
